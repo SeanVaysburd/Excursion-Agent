@@ -63,10 +63,16 @@ Network is required for the live data sources.
   unlocks live eBird sightings and the life-list "lifer bonus" (scenario
   S4). Without it, the nature agent runs on iNaturalist alone and says so
   in its own self-report. Point `--life-list` at your own eBird-style CSV.
-- **Your calendar** — `python demo.py --calendar path/to/your.ics`.
-  (Google Calendar sync is deliberate future work; for now, export an
-  .ics. Hard events block time; events marked tentative/optional — or
-  `X-SOFT:true` — survive as a visible score penalty instead.)
+- **Your calendar** — export a real one and point the agent at it:
+  `python demo.py --calendar path/to/your.ics`.
+  *Google Calendar:* Settings → Import & export → **Export** (unzip, use
+  your calendar's .ics). *Apple Calendar:* select a calendar → File →
+  **Export…**. Hard events block time; events marked tentative/optional —
+  or `X-SOFT:true` — survive as a visible score penalty instead.
+  Recurring-event (RRULE) expansion isn't supported, so prefer a flattened
+  export; live Google Calendar sync is deliberate future work. Without
+  your own file, the committed synthetic sample week is used (and
+  auto-shifted onto the current week, with a printed notice).
 
 ### The UI
 
