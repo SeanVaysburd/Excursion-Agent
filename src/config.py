@@ -152,7 +152,7 @@ ALLOWED_HOSTS = {
     "api.inaturalist.org",
     "api.ebird.org",
     "api-endpoint.mta.info",
-    "api.anthropic.com",
+    "api.anthropic.com",  # claude-sdk provider (subscription auth)
     "localhost",
     "127.0.0.1",
 }
@@ -190,10 +190,9 @@ EVENT_TYPE_EXCLUDED_FILM = {"Production Event", "Theater Load in and Load Outs"}
 # --------------------------------------------------------------------------
 # LLM call discipline (applies to every provider through the factory)
 # --------------------------------------------------------------------------
-LLM_SEMAPHORE = {"anthropic": 4, "claude-sdk": 2, "ollama": 1}
-LLM_TIMEOUT_S = {"anthropic": 60, "claude-sdk": 180, "ollama": 300}
-LLM_MAX_TOKENS = 4096  # explicit: langchain-anthropic 1.x otherwise resolves
-#                        it from a model-profile lookup that can surprise
+LLM_SEMAPHORE = {"claude-sdk": 2, "ollama": 1}
+LLM_TIMEOUT_S = {"claude-sdk": 180, "ollama": 300}
+LLM_MAX_TOKENS = 4096  # explicit output cap for every provider
 OLLAMA_NUM_CTX = 16384  # default 2048 silently truncates evidence packs
 OLLAMA_NUM_PREDICT = 2048
 
