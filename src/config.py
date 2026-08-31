@@ -136,9 +136,14 @@ BACKOFF_BASE_S = 1.5
 # round number). Exceeding CALL_CEILING flags the run in trace + eval; it
 # never raises limits.
 CALL_BUDGET = {
-    "daily": 12,  # 1 weather + 1 events + 1 mta + <=2 tides + <=6 bird/region
-    "weekly": 35,  # 7 daily waterfalls sharing the invocation cache
-    "full_demo": 80,  # S1-S5 under one invocation-scoped cache
+    # daily: 1 weather + 1 events + 1 mta + 1 tides + 3 birding regions x
+    # (2 eBird + 1 iNat) = 13, +1 one-time taxonomy fetch
+    "daily": 14,
+    # weekly: daily feeds are cached across the 7 days; only events vary
+    # per day (7) -> ~20
+    "weekly": 25,
+    # full 5-scenario demo under one invocation-scoped cache
+    "full_demo": 45,
 }
 CALL_CEILING = 90
 
