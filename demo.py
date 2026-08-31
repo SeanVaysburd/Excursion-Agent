@@ -285,7 +285,7 @@ async def run_scenario(name: str, ctx: RunContext, args) -> None:
                 "synthetic, intentionally incomplete"
                 if args.life_list.name == "life_list.csv"
                 else f"synthetic variant: {args.life_list.name}"),
-            samples_written=str(trace_path),
+            samples_written=str(trace_path.relative_to(ROOT)),
         )
         logger.close()
         print(f"\n  trace -> {trace_path}")

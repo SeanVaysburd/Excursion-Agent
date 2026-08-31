@@ -34,14 +34,22 @@ from src.tools import mta_alerts as mta_mod
 from src.tools import travel_matrix
 
 
+def _clip(text: str, limit: int) -> str:
+    """Word-safe truncation, so alert text never ends mid-word."""
+    if len(text) <= limit:
+        return text
+    return text[:limit].rsplit(" ", 1)[0].rstrip(",;:") + "..."
+
+
 def process_report(
     *,
     domain: str,
     report: AgentReport,
     registry_ids: set[str],
     cold_start: bool,
-    lifers: list[dict],
-    lifer_evidence: list[str],
+    lifers_by_region: dict[str, list[dict]],
+    lifer_evidence_by_region: dict[str, list[str]],
+    assigned_windows: dict[str, str],
     soft_windows: set[str],
     window_minutes: dict[str, int],
     window_starts: dict,
@@ -63,6 +71,29 @@ def process_report(
     for base in grounded:
         candidate = ScoredCandidate(base=base, domain=domain, confidence=base.confidence)
 
+        # 0, window sanity: the schema cannot Literal-constrain the window
+        # field (only evidence ids), so a model may emit "early morning"
+        # instead of a real label. An unknown label must never reach the
+        # final gate, where indexing by it would crash the whole run.
+        if base.window not in window_minutes:
+            assigned = assigned_windows.get(base.candidate_id)
+            if assigned and assigned in window_minutes:
+                candidate.adjustments.append(
+                    Adjustment(
+                        label="window_remap", delta=0.0,
+                        note=(f"agent emitted unknown window "
+                              f"{base.window!r}; remapped to the window "
+                              f"this candidate was offered in"),
+                    )
+                )
+                base.window = assigned
+            else:
+                candidate.pruned = True
+                candidate.prune_reason = (
+                    f"agent emitted unknown window label {base.window!r}")
+                survivors.append(candidate)
+                continue
+
         # 2, cold-start override: per-domain (the whole pack was cold) OR
         # per-candidate (one unlogged context inside a warm domain, e.g.
         # kayaking among well-logged birding sites).
@@ -78,16 +109,20 @@ def process_report(
                           "(cold start within a warm domain)"))
             )
 
-        # 3, lifer bonus (nature only; code-side; species NAMED)
-        if domain == "nature" and lifers:
-            delta = lifer_mod.bonus(len(lifers))
-            names = ", ".join(l["common_name"] for l in lifers[:5])
-            candidate.lifer_species = [l["common_name"] for l in lifers]
+        # 3, lifer bonus (nature only; code-side; species NAMED; scoped to
+        # the candidate's OWN region - a flat metro-wide list would stamp
+        # every card with every lifer in the area and the same bonus)
+        region = dest_meta.get(base.candidate_id, {}).get("region_id") or ""
+        region_lifers = lifers_by_region.get(region, [])
+        if domain == "nature" and region_lifers:
+            delta = lifer_mod.bonus(len(region_lifers))
+            names = ", ".join(l["common_name"] for l in region_lifers[:5])
+            candidate.lifer_species = [l["common_name"] for l in region_lifers]
             candidate.adjustments.append(
                 Adjustment(
                     label="lifer_bonus",
                     delta=delta,
-                    evidence_ids=lifer_evidence[:5],
+                    evidence_ids=(lifer_evidence_by_region.get(region) or [])[:5],
                     note=f"potential lifers: {names}",
                 )
             )
@@ -133,7 +168,8 @@ def process_report(
                     if action == "prune":
                         candidate.pruned = True
                         candidate.prune_reason = (
-                            f"{hit['line']} line {hit['alert_type']}: {hit['header'][:80]}"
+                            f"{hit['line']} line {hit['alert_type']}: "
+                            f"{_clip(hit['header'], 80)}"
                         )
                         break
                     candidate.adjustments.append(
@@ -145,7 +181,7 @@ def process_report(
                         )
                     )
                     candidate.transit_note = (
-                        f"{hit['line']} line: {hit['header'][:140]}"
+                        f"{hit['line']} line: {_clip(hit['header'], 140)}"
                         if hit["header"]
                         else f"{hit['line']} line {hit['alert_type']}"
                     )

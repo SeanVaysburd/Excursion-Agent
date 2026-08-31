@@ -67,6 +67,9 @@ def test_decision_requires_accepted(client):
 def test_append_preserves_style_and_assigns_next_id(client, tmp_path):
     corpus = tmp_path / "data" / "excursions.json"
     before = corpus.read_text()
+    # The live corpus legitimately grows as the user logs feedback, so the
+    # expectation is computed from the file, not hardcoded.
+    n = len(json.loads(before))
     response = client.post("/api/feedback", json={
         "kind": "decision", "date": "2026-09-05", "type": "hike",
         "site": "Harriman State Park", "accepted": False,
@@ -75,8 +78,8 @@ def test_append_preserves_style_and_assigns_next_id(client, tmp_path):
     })
     assert response.status_code == 200
     body = response.json()
-    assert body["id"] == "e21"
-    assert body["count"] == 21
+    assert body["id"] == f"e{n + 1:02d}"
+    assert body["count"] == n + 1
 
     after = corpus.read_text()
     entries = json.loads(after)

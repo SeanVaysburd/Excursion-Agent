@@ -164,7 +164,7 @@ filter-based design these two were caught by different guards.)
 
 ## The result that complicates the story
 
-Run `python demo.py --llm` and compare `s1_a` (no memory) with `s1_b` (memory).
+Run `python -m scripts.week3.memory_demo --llm` and compare `s1_a` (no memory) with `s1_b` (memory).
 
 **The LLM baseline already says "go early."** With no memory at all, Claude
 recommends 06:00-10:00 for spring birding, because "passerine activity peaks
@@ -189,7 +189,7 @@ dramatic. The LLM baseline is the stronger control, and the delta against
 ## Provenance of the LLM output
 
 `recommend.py` is rule-based: it keyword-matches the retrieved notes so that
-`python demo.py` runs anywhere, deterministically, with no key. That is the
+`python -m scripts.week3.memory_demo` runs anywhere, deterministically, with no key. That is the
 default and it is what the traces show.
 
 `llm_output/` holds what a real planner LLM produces from the same retrieved

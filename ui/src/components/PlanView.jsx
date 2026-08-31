@@ -97,8 +97,8 @@ function Card({ candidate, rank, onApprove, onPass, onLog }) {
         <Confidence level={candidate.confidence} />
         {lifers.length > 0 && (
           <span className="chip lifer"
-            title={`potential lifers (from the sample life list): ${lifers.join(", ")}`}>
-            <StarIcon size={12} /> {lifers.length} lifers
+            title={`potential lifers reported in this site's region: ${lifers.slice(0, 6).join(", ")}${lifers.length > 6 ? ` and ${lifers.length - 6} more` : ""}`}>
+            <StarIcon size={12} /> {lifers.length} {lifers.length === 1 ? "lifer" : "lifers"}
           </span>
         )}
         {candidate.trip && (
@@ -140,6 +140,7 @@ function Card({ candidate, rank, onApprove, onPass, onLog }) {
 
 export default function PlanView({ plan, summary, allowApprove = true }) {
   const [confirming, setConfirming] = useState(null);
+  const [approving, setApproving] = useState(false);
   const [written, setWritten] = useState(null);
   const [feedback, setFeedback] = useState(null); // FeedbackModal initial
   const [savedNote, setSavedNote] = useState(null);
@@ -162,11 +163,14 @@ export default function PlanView({ plan, summary, allowApprove = true }) {
   });
 
   const doApprove = async () => {
+    if (approving) return; // a double-click must not write two events
+    setApproving(true);
     const { candidate } = confirming;
     const result = await approve({
       name: titleCase(candidate.base.name), date: plan.date,
       window: candidate.base.window, reason: candidate.base.reason,
     }).catch((error) => ({ error: String(error.message || error) }));
+    setApproving(false);
     setConfirming(null);
     setWritten({ ...result, candidate });
   };
@@ -243,8 +247,11 @@ export default function PlanView({ plan, summary, allowApprove = true }) {
               (data/calendar.local.ics). Never happens without this confirm.
             </p>
             <div className="row">
-              <button className="btn quiet" onClick={() => setConfirming(null)}>Cancel</button>
-              <button className="btn primary" onClick={doApprove}>Confirm</button>
+              <button className="btn quiet" disabled={approving}
+                onClick={() => setConfirming(null)}>Cancel</button>
+              <button className="btn primary" disabled={approving} onClick={doApprove}>
+                {approving ? "writing..." : "Confirm"}
+              </button>
             </div>
           </div>
         </div>

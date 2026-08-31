@@ -95,8 +95,9 @@ export default function RunTrace({ active = true }) {
   const [filter, setFilter] = useState("");
   const [error, setError] = useState(null);
 
-  // Refresh the run list every time the tab is shown (new runs may have
-  // finished since); keep whatever run the user already selected.
+  // Refresh the run list AND the selected run's records every time the
+  // tab is shown (new runs and new records land while it is hidden);
+  // keep whatever run the user already selected.
   useEffect(() => {
     if (!active) return;
     getRuns().then((r) => {
@@ -104,7 +105,10 @@ export default function RunTrace({ active = true }) {
       setSelected((current) =>
         current || (r.find((run) => !isFixture(run)) || r[0])?.id || null);
     }).catch((e) => setError(String(e.message || e)));
-  }, [active]);
+    if (selected) {
+      getRun(selected).then(setRecords).catch(() => {});
+    }
+  }, [active]);  // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (!selected) return;
     setRecords(null);

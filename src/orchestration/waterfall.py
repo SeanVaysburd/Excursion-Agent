@@ -41,7 +41,7 @@ from src.tools import (
 )
 from src.tools.base import RunContext
 
-OUTDOOR_CATEGORIES = {"birding", "hike", "outdoor_event"}
+OUTDOOR_CATEGORIES = {"birding", "hike", "kayaking", "outdoor_event"}
 
 
 # --------------------------------------------------------------------------
@@ -286,7 +286,8 @@ async def run_daily(
         if result.status == "error":
             degraded.add(name)
     for feeds in bird_results.values():
-        for key, name in (("recent", "ebird"), ("inat", "inaturalist")):
+        for key, name in (("recent", "ebird"), ("notable", "ebird"),
+                          ("inat", "inaturalist")):
             if feeds[key].status == "error":
                 degraded.add(name)
     if tides_r and tides_r.status == "error":
@@ -331,7 +332,8 @@ async def run_daily(
     nature_candidates, nature_lines, dest_meta = [], [], {}
     life_list = lifer_mod.load_life_list(life_list_path)
     all_lifers: list[dict] = []
-    lifer_evidence: list[str] = []
+    lifers_by_region: dict[str, list[dict]] = {}
+    lifer_evidence_by_region: dict[str, list[str]] = {}
     for site in sites:
         window = first_ok_window(site["category"])
         if window is None:
@@ -346,7 +348,8 @@ async def run_daily(
             {"candidate_id": cid, "name": site["name"], "site": site["name"], "window": window}
         )
         dest_meta[cid] = {"dest_id": site["id"], "borough": site.get("borough"),
-                          "category": site["category"]}
+                          "category": site["category"],
+                          "region_id": site.get("region_id")}
     for region_id, feeds in bird_results.items():
         recent_obs = feeds["recent"].data or []
         notable_obs = feeds["notable"].data or []
@@ -367,13 +370,14 @@ async def run_daily(
         region_lifers = lifer_mod.potential_lifers(
             recent_obs + notable_obs, life_list, taxonomy
         )
+        lifers_by_region[region_id] = region_lifers
         for entry in region_lifers:
             if entry not in all_lifers:
                 all_lifers.append(entry)
-        lifer_evidence.extend(
+        lifer_evidence_by_region[region_id] = [
             o["evidence_id"] for o in recent_obs + notable_obs
             if o.get("species_code") in {l["code"] for l in region_lifers}
-        )
+        ]
         for obs in (feeds["inat"].data or [])[:5]:
             nature_lines.append(
                 f"{obs['evidence_id']} | iNat: {obs['common_name']} ({obs['observed_on']})"
@@ -478,6 +482,13 @@ async def run_daily(
             await _memory_lines(ctx, season, "museum", venue["name"],
                                 time_of_day(windows[0].start), weekday, windows[0].label)
         )
+    if not indoor_candidates:
+        # Say WHY the indoor lane is empty (usually closed days or free
+        # windows too short to overlap open hours), so an empty agent
+        # output reads as hours logic, never as a silent filter bug.
+        plan.notes.append(
+            f"no indoor venue is open for at least {config.MIN_WINDOW_MINUTES} "
+            f"min inside any free window on {weekday}")
 
     def build_pack(domain: str, candidates: list[dict], lines: list[str],
                    memory_lines: list[str], sources: list[dict]) -> EvidencePack:
@@ -551,8 +562,12 @@ async def run_daily(
 
         scored, stats, finding = process_report(
             domain=domain, report=report, registry_ids=ctx.registry.ids,
-            cold_start=pack.cold_start, lifers=all_lifers if domain == "nature" else [],
-            lifer_evidence=lifer_evidence, soft_windows=soft_windows,
+            cold_start=pack.cold_start,
+            lifers_by_region=lifers_by_region if domain == "nature" else {},
+            lifer_evidence_by_region=lifer_evidence_by_region,
+            assigned_windows={c["candidate_id"]: c["window"]
+                              for c in pack.candidates},
+            soft_windows=soft_windows,
             window_minutes=window_minutes, window_starts=window_starts,
             dest_meta=dest_meta, mta_by_route=mta_by_route,
             cold_candidate_ids=cold_candidate_ids if domain == "nature" else set(),
@@ -601,6 +616,7 @@ async def run_daily(
             "category": dest_meta.get(candidate.candidate_id, {}).get("category", ""),
         }
         for label, members in plan.slots.items()
+        if label in window_starts  # belt and braces behind the window remap
         for candidate in members
     ]
     violations = validate_hard_constraints(

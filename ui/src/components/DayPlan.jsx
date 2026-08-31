@@ -12,6 +12,7 @@ export default function DayPlan({ active = true }) {
   const [runs, setRuns] = useState([]);
   const [pinned, setPinned] = useState("");
   const [liveRecords, setLiveRecords] = useState(null);
+  const [starting, setStarting] = useState(false);
   const [logging, setLogging] = useState(false);
   const [savedNote, setSavedNote] = useState(null);
   const abortRef = useRef(null);
@@ -48,14 +49,20 @@ export default function DayPlan({ active = true }) {
         setState((s) => ({ ...s, error: String(error.message || error) }));
       }
     }
-    watchingRef.current = null;
+    // Only the CURRENT watcher may clear the marker; an old one finishing
+    // late must not erase a newer watcher's guard.
+    if (watchingRef.current === traceId) watchingRef.current = null;
   };
 
   const runLive = async () => {
+    if (starting || liveRecords) return;
+    setStarting(true); // disabled from the CLICK, not from the first poll
     try {
       const started = await startDay();
+      setStarting(false);
       await watchLive(started.trace_id);
     } catch (error) {
+      setStarting(false);
       setState((s) => ({ ...s, error: String(error.message || error) }));
     }
   };
@@ -102,11 +109,12 @@ export default function DayPlan({ active = true }) {
             ))}
           </select>
         )}
-        <button className="btn primary" onClick={runLive} disabled={!!liveRecords}>
-          {liveRecords ? "running…" : "Run live now"}
+        <button className="btn primary" onClick={runLive}
+          disabled={starting || !!liveRecords}>
+          {starting ? "starting…" : liveRecords ? "running…" : "Run live now"}
         </button>
       </div>
-      {liveRecords && <FlowView records={liveRecords} live />}
+      {liveRecords && <FlowView records={liveRecords} live mode="day" />}
       {state.error && (
         <div className={plan ? "callout warn" : "empty"}>
           {!plan && <div className="big-ico"><WeatherIcon size={34} /></div>}

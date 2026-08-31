@@ -55,9 +55,17 @@ export function guessType(candidate) {
 }
 
 export function themeInit() {
+  // Same precedence as the pre-paint script in index.html: an explicit
+  // ?theme= link wins, then the saved choice, then the system setting.
+  let fromUrl = null;
   let saved = null;
+  try {
+    const q = new URLSearchParams(location.search).get("theme");
+    if (q === "dark" || q === "light") fromUrl = q;
+  } catch { /* fine */ }
   try { saved = localStorage.getItem("ea-theme"); } catch { /* private mode */ }
-  const theme = saved
+  const theme = fromUrl
+    || saved
     || document.documentElement.dataset.theme
     || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
   document.documentElement.dataset.theme = theme;

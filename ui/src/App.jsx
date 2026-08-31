@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { getRuns } from "./api.js";
 import { relTime, themeInit, themeSet } from "./helpers.js";
+import { getProvider, setProvider } from "./provider.js";
 import AskTab from "./components/AskTab.jsx";
 import DayPlan from "./components/DayPlan.jsx";
 import { MapIcon, MoonIcon, SunIcon } from "./components/Icons.jsx";
@@ -24,6 +25,7 @@ function initialTab() {
 export default function App() {
   const [tab, setTab] = useState(initialTab);
   const [theme, setTheme] = useState(themeInit);
+  const [provider, setProviderState] = useState(getProvider);
   const [status, setStatus] = useState(null);
 
   useEffect(() => {
@@ -60,6 +62,13 @@ export default function App() {
             ))}
           </nav>
           <div className="chrome-right">
+            <select className="runpick" value={provider}
+              onChange={(e) => { setProviderState(e.target.value); setProvider(e.target.value); }}
+              title="which model runs the next live runs; every trace records the one that actually ran">
+              <option value="">model: default</option>
+              <option value="claude-sdk">model: Claude</option>
+              <option value="ollama">model: local</option>
+            </select>
             <button className="theme-btn" onClick={flip}
               aria-label={theme === "dark" ? "switch to light mode" : "switch to dark mode"}
               title={theme === "dark" ? "switch to light" : "switch to dark"}>

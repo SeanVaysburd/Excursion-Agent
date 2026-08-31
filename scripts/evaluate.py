@@ -214,12 +214,13 @@ def compute(traces: dict[str, Path]) -> str:
         naive, sets = plan.get("naive"), plan.get("sets") or []
         if naive and sets:
             winner = sets[0]
-            lines += ["*(Disclosure: this weekly run uses the authored synthetic",
-                      "calendar week, selected because it exercises the",
-                      "contrast. Live-data variance means another week may show",
-                      "no contrast; that outcome is reported here honestly when",
-                      "it happens, and re-running with `--date` in another week",
-                      "is the documented recourse.)*", "",
+            lines += ["### Honest finding", "",
+                      "This weekly run uses the authored synthetic calendar",
+                      "week, selected because it exercises the contrast.",
+                      "Live-data variance means another week may show no",
+                      "contrast; that outcome is reported here plainly when it",
+                      "happens, and re-running with `--date` in another week",
+                      "is the documented recourse.", "",
                       "| day | naive pick | ToT pick |", "|---|---|---|"]
             differ_dates = {d["date"] for d in plan["contrast"].get("differing_days", [])}
             for n, t in zip(naive["picks"], winner["picks"]):
@@ -311,6 +312,30 @@ def compute(traces: dict[str, Path]) -> str:
                      f"{max(values)} |")
     if not domain_scores:
         lines.append("| (no scored candidates found) | 0 | - | - | - |")
+    # The pre-pruning means differ because candidate QUALITY differs per
+    # domain (agents are supposed to score weak options low); the check
+    # that matters for fairness is whether the scale aligns at the top,
+    # where domains actually compete. So the survivors get their own table.
+    surv_scores: dict[str, list[float]] = defaultdict(list)
+    for recs in all_records.values():
+        for r in recs:
+            if r["type"] != "day_plan":
+                continue
+            for members in (r["plan"].get("slots") or {}).values():
+                for candidate in members:
+                    surv_scores[candidate["domain"]].append(
+                        candidate["base"]["score"])
+    if surv_scores:
+        lines += ["", "Same scores, surviving top-3 picks only (where the "
+                  "domains compete head to head):", "",
+                  "| domain | n | mean | min | max |", "|---|---|---|---|---|"]
+        for domain, values in sorted(surv_scores.items()):
+            lines.append(f"| {domain} | {len(values)} | "
+                         f"{statistics.mean(values):.1f} | {min(values)} | "
+                         f"{max(values)} |")
+        lines += ["", "A domain grading looser than the others would show a "
+                  "systematically higher survivor mean; the shared anchor "
+                  "block in src/agents/rubric.py is what keeps these level."]
 
     # ---- acceptance + calibration (longitudinal, honest n) ---------------
     # Week-6 metrics that only exist once a person uses the feedback

@@ -33,9 +33,14 @@ def _blocks(text: str) -> dict[int, str]:
     return {k: "\n".join(v) for k, v in sections.items()}
 
 
-def test_week3_demo_reproduces_checkpoint_output():
+def test_week3_demo_reproduces_checkpoint_output(tmp_path):
+    # Pinned to the 20-entry calibration snapshot: the live corpus grows
+    # with real user feedback (by design), and the checkpoint bytes must
+    # not depend on what the user logged last night.
     result = subprocess.run(
-        [sys.executable, "-m", "scripts.week3.memory_demo"],
+        [sys.executable, "-m", "scripts.week3.memory_demo",
+         "--corpus", str(ROOT / "tests" / "fixtures" / "excursions_seed.json"),
+         "--storage", str(tmp_path)],
         cwd=ROOT,
         capture_output=True,
         text=True,

@@ -16,19 +16,24 @@ export default function AskTab({ active = true }) {
   const [thread, setThread] = useState([]);
   const [busy, setBusy] = useState(false);
   const [liveRecords, setLiveRecords] = useState(null);
+  const [liveKind, setLiveKind] = useState("day");
   const inputRef = useRef(null);
   const endRef = useRef(null);
   const abortRef = useRef(null);
 
   useEffect(() => () => abortRef.current?.abort(), []);
 
-  // New thread entries (or live progress) scroll into view; the input gets
-  // focus back once the agent is done. Both are no-ops while the tab is
-  // hidden, so they also re-run when it becomes visible again.
+  // New thread entries (or a live run starting/ending) scroll into view;
+  // the input gets focus back once the agent is done. Both are no-ops
+  // while the tab is hidden, so they also re-run when it becomes visible.
+  // Keyed on WHETHER a live view exists, not its contents: every poll
+  // tick delivers a fresh records array, and force-scrolling on each one
+  // would yank the page away from wherever the user scrolled.
+  const liveShowing = liveRecords !== null;
   useEffect(() => {
     if (!active) return;
     endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-  }, [thread, liveRecords, active]);
+  }, [thread, liveShowing, active]);
   useEffect(() => {
     if (!busy && active) inputRef.current?.focus();
   }, [busy, active]);
@@ -53,6 +58,7 @@ export default function AskTab({ active = true }) {
           ? `On it. Planning the week of ${intent.date} (7 daily plans plus the beam search, a few minutes).`
           : `On it. Planning ${intent.date} live.`,
       }]);
+      setLiveKind(intent.kind === "week" ? "week" : "day");
       setLiveRecords([]);
       abortRef.current = new AbortController();
       const records = await watchRun(res.trace_id, setLiveRecords,
@@ -120,7 +126,7 @@ export default function AskTab({ active = true }) {
           }
           return <WeekView key={i} plan={entry.plan} />;
         })}
-        {liveRecords && <FlowView records={liveRecords} live />}
+        {liveRecords && <FlowView records={liveRecords} live mode={liveKind} />}
         <div ref={endRef} />
       </div>
 

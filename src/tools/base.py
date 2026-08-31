@@ -224,15 +224,15 @@ async def _fetch_once(
                 try:
                     payload = response.json()
                 except ValueError:
+                    # Seen live from Open-Meteo: an error string streamed
+                    # with a 200 ("timeoutReached"). A transient balancer
+                    # glitch, so it earns the same bounded retry as a 5xx;
+                    # the body snippet lands in the note for diagnosis.
+                    last_note = f"200 but non-JSON body: {response.text[:60]!r}"
+                else:
                     return ToolResult(
-                        source=source,
-                        fetched_at=now,
-                        status="error",
-                        note="200 but non-JSON body",
+                        source=source, fetched_at=now, status="ok", data=payload
                     )
-                return ToolResult(
-                    source=source, fetched_at=now, status="ok", data=payload
-                )
             if response.status_code == 429:
                 ctx.broken.add(source)
                 return ToolResult(
@@ -249,7 +249,8 @@ async def _fetch_once(
                     status="error",
                     note=f"HTTP {response.status_code} (not retried)",
                 )
-            last_note = f"HTTP {response.status_code}"
+            if response.status_code != 200:  # keep the non-JSON-200 note
+                last_note = f"HTTP {response.status_code}"
 
         if attempt < attempts - 1:
             await asyncio.sleep(config.BACKOFF_BASE_S * (2**attempt))

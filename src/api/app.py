@@ -14,12 +14,13 @@ import asyncio
 import json
 import os
 import re
+import uuid
 from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Any, Literal
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
@@ -120,6 +121,10 @@ def _next_saturday() -> date:
 # Live runs: one at a time; the trace file is the progress feed
 # --------------------------------------------------------------------------
 _LIVE: dict[str, Any] = {"task": None, "trace": None, "kind": None}
+# The busy-check, the provider probe (a real LLM call that yields the
+# loop for seconds) and the task creation must be one atomic step, or two
+# quick requests both pass the check and start overlapping runs.
+_START_LOCK = asyncio.Lock()
 
 
 def _live_busy() -> bool:
@@ -127,37 +132,43 @@ def _live_busy() -> bool:
     return task is not None and not task.done()
 
 
-async def _run_live(kind: str, target: date, trace_path: Path) -> None:
+async def _run_live(kind: str, target: date, trace_path: Path,
+                    provider: str | None = None) -> None:
     """The background body of a live run. Every failure lands in the trace
     (and a run_summary always closes it, so UI polling always terminates)."""
     ctx = RunContext(scenario=f"ui-{kind}")
     logger: TrajectoryLogger | None = None
     error: str | None = None
+    adapter = get_llm(provider)
     try:
         logger = TrajectoryLogger(trace_path, ctx.run_id, f"ui-{kind}")
         ctx.log = logger.write
-        await probe(ctx)
+        await probe(ctx, provider)
+        escalated = False
         if kind == "day":
-            plan = await run_daily(ctx, get_llm(), logger, target,
+            plan = await run_daily(ctx, adapter, logger, target,
                                    config.DATA_DIR / "calendar.ics",
                                    config.DATA_DIR / "life_list.csv")
+            escalated = plan.escalated
             logger.write({"type": "day_plan", "plan": plan.model_dump()})
         else:
-            await run_weekly(ctx, get_llm(), logger, target,
-                             config.DATA_DIR / "calendar.ics",
-                             config.DATA_DIR / "life_list.csv")
+            week_plan, _ = await run_weekly(ctx, adapter, logger, target,
+                                            config.DATA_DIR / "calendar.ics",
+                                            config.DATA_DIR / "life_list.csv")
+            escalated = not week_plan.sets
     except Exception as exc:  # noqa: BLE001 - surfaced in the trace
         error = str(exc)[:200]
+        escalated = False
         if logger is not None:
             logger.write({"type": "step", "stage": "live", "tool": "runner",
                           "status": "error", "note": error})
     finally:
         if logger is not None:
             summary: dict[str, Any] = {
-                "date": target.isoformat(), "provider": config.LLM_PROVIDER,
+                "date": target.isoformat(), "provider": adapter.provider,
                 "calls_by_source": dict(ctx.calls),
                 "llm_calls": dict(ctx.llm_calls),
-                "ceiling_flag": ctx.ceiling_flagged, "escalated": False,
+                "ceiling_flag": ctx.ceiling_flagged, "escalated": escalated,
             }
             if error:
                 summary["error"] = error
@@ -168,30 +179,47 @@ async def _run_live(kind: str, target: date, trace_path: Path) -> None:
 
 class StartBody(BaseModel):
     date: str | None = None
+    provider: str | None = None  # "claude-sdk" | "ollama"; None = .env default
 
 
 async def _start_live(kind: str, body: StartBody) -> dict:
-    if _live_busy():
-        raise HTTPException(
-            409, f"a live {_LIVE['kind']} run is already in progress "
-                 f"({_LIVE['trace']}); watch it or wait")
     target = date.fromisoformat(body.date) if body.date else _next_saturday()
-    stamp = datetime.now(config.TZ).strftime("%Y%m%dT%H%M%S")
-    trace_path = config.RUNS_DIR / f"ui_{kind}_{stamp}.jsonl"
-    task = asyncio.create_task(_run_live(kind, target, trace_path))
-    # Retrieve the exception so a failed task never dies unobserved; the
-    # trace already carries the details for the UI.
-    task.add_done_callback(lambda t: t.exception())
-    _LIVE.update(task=task, trace=trace_path.stem, kind=kind)
+    async with _START_LOCK:
+        if _live_busy():
+            raise HTTPException(
+                409, f"a live {_LIVE['kind']} run is already in progress "
+                     f"({_LIVE['trace']}); watch it or wait")
+        # Validate the provider choice and probe it BEFORE starting the
+        # task, so "Ollama isn't running" comes back as an immediate clear
+        # error instead of a failed background run. Under the lock, so a
+        # second click during the probe waits and then gets the 409.
+        ctx = RunContext(scenario="ui-probe")
+        try:
+            await probe(ctx, body.provider)
+        except Exception as exc:  # noqa: BLE001 - config errors -> client
+            raise HTTPException(400, str(exc)[:300]) from exc
+        finally:
+            await ctx.aclose()
+        stamp = datetime.now(config.TZ).strftime("%Y%m%dT%H%M%S")
+        suffix = uuid.uuid4().hex[:6]  # two starts in one second stay distinct
+        trace_path = config.RUNS_DIR / f"ui_{kind}_{stamp}_{suffix}.jsonl"
+        task = asyncio.create_task(_run_live(kind, target, trace_path,
+                                             body.provider))
+        # Retrieve the exception so a failed task never dies unobserved;
+        # the trace already carries the details for the UI.
+        task.add_done_callback(lambda t: t.exception())
+        _LIVE.update(task=task, trace=trace_path.stem, kind=kind)
     return {"trace_id": trace_path.stem, "kind": kind,
-            "date": target.isoformat()}
+            "date": target.isoformat(),
+            "provider": get_llm(body.provider).provider}
 
 
 # --------------------------------------------------------------------------
 # Endpoints
 # --------------------------------------------------------------------------
 @app.get("/api/day")
-async def api_day(date_: str | None = None, refresh: bool = False,
+async def api_day(date_: str | None = Query(None, alias="date"),
+                  refresh: bool = False,
                   run: str | None = None) -> dict:
     target = date.fromisoformat(date_) if date_ else _next_saturday()
     if run:
@@ -245,6 +273,7 @@ async def api_week_start(body: StartBody) -> dict:
 
 class AskBody(BaseModel):
     message: str
+    provider: str | None = None
 
 
 @app.post("/api/ask")
@@ -258,14 +287,16 @@ async def api_ask(body: AskBody) -> dict:
         raise HTTPException(400, "say something to plan")
     ctx = RunContext(scenario="ui-ask")
     try:
-        intent = await parse_request(get_llm(), ctx, body.message,
+        intent = await parse_request(get_llm(body.provider), ctx, body.message,
                                      datetime.now(config.TZ).date())
+    except Exception as exc:  # noqa: BLE001 - provider config -> client
+        raise HTTPException(400, str(exc)[:300]) from exc
     finally:
         await ctx.aclose()
     if intent.kind in ("clarify", "unsupported"):
         return {"intent": intent.model_dump()}
     started = await _start_live(intent.kind if intent.kind == "day" else "week",
-                                StartBody(date=intent.date))
+                                StartBody(date=intent.date, provider=body.provider))
     return {"intent": intent.model_dump(), **started}
 
 

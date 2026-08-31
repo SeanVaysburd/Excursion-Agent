@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { sendFeedback } from "../api.js";
 import { FEEDBACK_TYPES } from "../helpers.js";
 import { StarIcon } from "./Icons.jsx";
@@ -43,8 +43,17 @@ export default function FeedbackModal({ initial, onClose, onSaved }) {
     }
   };
 
+  // Close only on a true backdrop CLICK: a text-selection drag that
+  // starts in the notes field and releases over the backdrop must not
+  // throw the draft away.
+  const downOnBackdrop = useRef(false);
+
   return (
-    <div className="modal-back" onClick={onClose}>
+    <div className="modal-back"
+      onMouseDown={(e) => { downOnBackdrop.current = e.target === e.currentTarget; }}
+      onClick={(e) => {
+        if (downOnBackdrop.current && e.target === e.currentTarget) onClose();
+      }}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
         <h3>
           {kind === "decision"

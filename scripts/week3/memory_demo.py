@@ -425,7 +425,23 @@ def main() -> None:
         default="kayaking",
         help="which cold-start case to use for block 4",
     )
+    parser.add_argument(
+        "--corpus", type=Path, default=None,
+        help="alternate excursions.json (the regression test pins the "
+             "20-entry calibration snapshot here, so feedback the user "
+             "logs later never shifts the checkpoint bytes)")
+    parser.add_argument(
+        "--storage", type=Path, default=None,
+        help="alternate vector-store directory (required with --corpus so "
+             "the demo never rebuilds the app's own index)")
     args = parser.parse_args()
+
+    if args.corpus:
+        import src.memory.retrieval as retrieval_mod
+        storage = args.storage or (args.corpus.parent / ".week3_storage")
+        retrieval_mod.DATA_PATH = args.corpus
+        retrieval_mod.PERSIST_DIR = storage / "chroma"
+        retrieval_mod.CORPUS_HASH_PATH = storage / "corpus.sha256"
 
     memory = ExcursionMemory.build(rebuild=args.rebuild)
     w = WEIGHTS

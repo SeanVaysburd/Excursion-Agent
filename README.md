@@ -34,7 +34,9 @@ weaker than the committed Claude-produced samples. Same system, smaller
 model. The guardrails (evidence grounding, validators, fallbacks) don't
 depend on which model you pick, but the quality of the reasoning does.
 Expect a one-time 5 GB model download, and real fan noise while it thinks.
-On this path, your machine is the datacenter.
+On this path, your machine is the datacenter. Low-RAM machine? Set
+`OLLAMA_MODEL=llama3.2:3b` (or `gemma2:2b`) in `.env`; the same system
+runs on the smaller model and the quality warning above applies double.
 
 First-run notes: pip pulls the pinned scientific stack (a few GB, once),
 and the first plan downloads about 90 MB of embedding weights into
@@ -105,14 +107,23 @@ plus an expandable timeline, including each agent's complete structured
 output (`agent_report` records). Day and Week load the latest completed
 run instantly; Run live starts a fresh one on a server task (one at a
 time; a second request gets a clear 409) and the UI polls the growing
-trace. Light and dark theme. Node is only needed for the UI. `pytest`
-runs the offline test suite with no network and no keys.
+trace. A model switch in the header picks which provider runs the next
+live run (Claude on a subscription, or the local Ollama model); the
+choice rides along on each request and every trace's run summary records
+the provider that actually ran, so provenance survives the switch. Light
+and dark theme. Node is only needed for the UI. `pytest` runs the
+offline test suite with no network and no keys.
 
 ### Don't want to run it?
 
 Real committed output from real runs: sample trajectories in
-[`runs/`](runs/), computed metrics in [`eval/results.md`](eval/results.md),
-screenshots in [`docs/screenshots/`](docs/screenshots/). The Week-3
+[`runs/`](runs/), computed metrics in [`eval/results.md`](eval/results.md)
+(groundedness, hard-constraint violations, escalation, forced-error
+degradation, fallback counts, per-stage latency, call accounting against
+the budget, critic-bound adherence, the naive-vs-ToT key result, the
+lifer on/off ablation, rubric consistency across domains, and acceptance
+rate + calibration from recorded decisions), screenshots in
+[`docs/screenshots/`](docs/screenshots/). The Week-3
 retrieval checkpoint (the memory layer's own demo and calibration) is in
 [`docs/week3/`](docs/week3/).
 
@@ -146,6 +157,47 @@ retrieval checkpoint (the memory layer's own demo and calibration) is in
   │ cold-start fallback         │
   └─────────────────────────────┘
 ```
+
+### Project layout
+
+```
+src/agents/         domain agents, shared rubric, schemas, LLM adapter,
+                    intent guardrail, post-processing pipeline
+src/orchestration/  daily waterfall + weekly Tree-of-Thought beam search
+src/memory/         the Week-3 retrieval layer (LlamaIndex + Chroma)
+src/tools/          one polite wrapper + the seven API tools, calendar
+                    read/write, travel matrix
+src/safety/         validators, self-report scan, redaction, trajectory log
+src/api/            FastAPI backend        ui/          React frontend
+data/               synthetic inputs (labeled)           runs/   trajectories
+eval/               computed results        docs/week3/  retrieval checkpoint
+scripts/            evaluate, calendar + life-list generators, week3 demos
+```
+
+### Where each course checkpoint lives
+
+| checkpoint | design item | implementation |
+|---|---|---|
+| Week 1 | problem, user, environment, actions | this README's opening + the architecture above |
+| Week 2 | waterfall reasoning loop, hard/soft calendar logic | [`src/orchestration/waterfall.py`](src/orchestration/waterfall.py), [`src/tools/calendar_tool.py`](src/tools/calendar_tool.py) |
+| Week 2 | short-term memory (fetched-once, ruled-out, scores) | `RunContext` cache + evidence registry in [`src/tools/base.py`](src/tools/base.py) |
+| Week 3 | semantic retrieval over feedback, re-rank, cutoff | [`src/memory/retrieval.py`](src/memory/retrieval.py), calibration in [`docs/week3/`](docs/week3/) |
+| Week 4 | Tree-of-Thought weekly beam + critic + pruning | [`src/orchestration/tot_beam.py`](src/orchestration/tot_beam.py) |
+| Week 5 | five agents, shared rubric, supervisor coordination | roster below; rubric in [`src/agents/rubric.py`](src/agents/rubric.py) |
+| Week 6 | guardrails, escalation, approval gates, redaction | [`src/safety/`](src/safety/), [`src/agents/intent.py`](src/agents/intent.py), the two gated write paths |
+| Week 6 | evaluation metrics from real traces | [`scripts/evaluate.py`](scripts/evaluate.py) -> [`eval/results.md`](eval/results.md) |
+| Weeks 1/2/4 | accept/reject + rating feedback into memory | `POST /api/feedback` in [`src/api/app.py`](src/api/app.py) + the UI's Pass / Log this trip |
+
+### The agents
+
+| agent | kind | role | where |
+|---|---|---|---|
+| nature | LLM, shared rubric | scores birding/hike/kayak sites from eBird, iNaturalist, tides, weather, memory | [`src/agents/domain_agents.py`](src/agents/domain_agents.py) |
+| outdoor events | LLM, shared rubric | scores permitted city events from the live feed, weather, memory | same file, different evidence pack |
+| indoor | LLM, shared rubric | scores museums/venues from hours, transit, memory | same file |
+| weekly critic | LLM | re-scores partial week sets for variety, walking, transit fatigue | [`src/orchestration/tot_beam.py`](src/orchestration/tot_beam.py) |
+| supervisor | code, deterministic | runs the waterfall, fans out the agents, owns the beam loop and every validator | [`src/orchestration/`](src/orchestration/) |
+| intent guardrail | code first, LLM fallback | turns free text into a validated day/week request, refuses out-of-horizon dates | [`src/agents/intent.py`](src/agents/intent.py) |
 
 Every number a reviewer might want to argue with sits commented in
 [`src/config.py`](src/config.py): weather gates (with units), penalties,
@@ -223,6 +275,16 @@ have recorded, with the honest n stated.
   else), and a validator re-checks membership afterward. The metric
   counts everything the agents emitted before stripping; measuring after
   the strip would make 100% meaningless.
+- **Fallbacks are always visible, never silent.** Every degradation
+  (a down source, a widened radius, a parser failure) lands in the
+  trace as a labeled fallback step and costs stated confidence; there
+  is no mock or canned-response mode anywhere, because an unlabeled
+  stand-in would undermine every claim the trace makes.
+- **The Ask tab is a build-time addition** to the frozen three-tab
+  spec, in the same spirit as `sites.json`: a thin natural-language
+  router ([`src/agents/intent.py`](src/agents/intent.py)) into exactly
+  the same waterfall and ToT runs the buttons start, with the same
+  input check. No parallel planning path exists behind it.
 - **Reproducibility, stated plainly.** Beam results are deterministic
   given the same critic verdicts: ordered expansion, a total sort key,
   a seeded tie-break. They aren't reproducible across days, because
@@ -239,9 +301,11 @@ escalation fixture,
 the venue catalog with simplified hours, the travel-time matrix, the
 outdoor-site catalog (`sites.json`, an addition to the original data-file
 list, needed for coordinates, regions and tides), and the life list. The
-life list is seeded from real regional observations but intentionally
-incomplete: about 150 of the species currently being seen, always missing
-the two demo shorebirds, so the lifer path demonstrates on live data.
+life list is seeded from live regional observations and intentionally
+missing exactly two seasonally common shorebirds (Semipalmated and Least
+Sandpiper), so the lifer path demonstrates on live data with a small,
+named, believable bonus; the fuller control list includes them, and
+`scripts/seed_life_list.py` reseeds both when the season shifts.
 `data/excursions.json` is the synthetic 20-entry feedback corpus the
 memory layer was calibrated on in Week 3; entries you add through the
 feedback UI are appended there tagged `"source": "user"`, so your real
@@ -280,8 +344,8 @@ One shared wrapper enforces all of it: per-source minimum intervals
 coalescing so concurrent agents can't stampede a miss, at most two
 retries on network errors and 5xx only (never 4xx), circuit-breaking a
 source for the rest of the run on a 429, batch-by-design fetching (one
-weather call per run covers 16 days; one eBird and one iNaturalist call
-per site region), a custom User-Agent, and a hostname allowlist that
+weather call per run covers 16 days; two eBird calls (recent plus
+notable) and one iNaturalist call per site region), a custom User-Agent, and a hostname allowlist that
 raises on anything undocumented. Per-source call counts print at the end
 of every run and land in each trace's run summary. A config ceiling flags
 runaway designs instead of raising limits. The same discipline covers LLM
@@ -338,7 +402,9 @@ weekly S2 on the local model is a long CPU burn and is run separately).
 Simulated failures are stamped on every line. The Week-3 demo in
 `docs/week3/` replays its committed LLM outputs (it says so in its own
 output), which is different from the live agent runs here.
-`eval/results.md` cites the exact trace file behind every number.
+`eval/results.md` cites the exact trace file behind every number. How the
+design evolved across the six checkpoints, reversals included, is written
+up in [`docs/development_history.md`](docs/development_history.md).
 
 ## Future work
 

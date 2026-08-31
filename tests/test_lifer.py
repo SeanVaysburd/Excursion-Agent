@@ -63,13 +63,15 @@ def test_bonus_formula_min_cap(count, expected):
 
 
 def test_committed_life_lists_are_the_s4_pair():
-    """The base list is a realistic ~150-species personal list (user's
-    calibration) that always lacks the two demo shorebirds; the full list
-    is the zero-lifers eval control."""
+    """The base list is seeded from live regional observations and is
+    missing EXACTLY the small deliberate gap (seasonally common species,
+    currently the two sandpipers), so live lifer counts stay small and
+    believable; the full list is the fuller-life-list eval control.
+    scripts/seed_life_list.py maintains this pair."""
     base = load_life_list(config.DATA_DIR / "life_list.csv")
     full = load_life_list(config.DATA_DIR / "life_list_full.csv")
-    assert len(base) == 150
-    assert {"semplo", "shbdow"}.isdisjoint(base)
-    assert {"semplo", "shbdow"} <= full
-    assert base < full  # strict subset: the control can never yield lifers
+    gap = full - base
+    assert base < full  # strict subset: the control closes the gap
+    assert 1 <= len(gap) <= 3, f"gap should stay tiny and deliberate: {gap}"
+    assert {"semsan", "leasan"} <= gap
     assert bonus(2) == 2.0 and bonus(50) == config.LIFER_BONUS_CAP

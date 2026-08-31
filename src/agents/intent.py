@@ -135,13 +135,20 @@ def quick_parse(message: str, today: date) -> Intent | None:
     if DATE_HINT_RE.search(text):
         return None  # date-ish text this parser didn't understand -> LLM
 
+    # "week" outranks "today"/"tomorrow": "plan my week starting tomorrow"
+    # is a weekly request anchored there, not a single-day plan.
+    if wants_week:
+        if "tomorrow" in text:
+            anchor = today + timedelta(days=1)
+        elif "next" in text:
+            anchor = today + timedelta(days=7)
+        else:
+            anchor = today
+        return Intent(kind="week", date=anchor.isoformat())
     if "today" in text:
         return Intent(kind="day", date=today.isoformat())
     if "tomorrow" in text:
         return Intent(kind="day", date=(today + timedelta(days=1)).isoformat())
-    if wants_week:
-        anchor = today + timedelta(days=7) if "next" in text else today
-        return Intent(kind="week", date=anchor.isoformat())
     if "weekend" in text:
         return Intent(kind="clarify",
                       reply="Saturday or Sunday? Tell me which day and I'll plan it.")

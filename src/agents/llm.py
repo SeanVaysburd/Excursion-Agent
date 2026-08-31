@@ -177,39 +177,40 @@ class LLMAdapter:
             return raw, None, f"parse failure: {type(exc).__name__}: {exc}"
 
 
-_ADAPTER: LLMAdapter | None = None
-_PROBED = False
+_ADAPTERS: dict[str, LLMAdapter] = {}
+_PROBED: set[str] = set()
 
 
-def get_llm() -> LLMAdapter:
-    """Provider adapter singleton, guarded at first construction."""
-    global _ADAPTER
-    if _ADAPTER is None:
-        provider = config.LLM_PROVIDER
-        if provider not in config.LLM_SEMAPHORE:
+def get_llm(provider: str | None = None) -> LLMAdapter:
+    """Provider adapter, one cached instance per provider name. No
+    argument means the .env default; the UI's per-run switch passes an
+    explicit name. Guards run at first construction of each provider."""
+    name = provider or config.LLM_PROVIDER
+    if name not in _ADAPTERS:
+        if name not in config.LLM_SEMAPHORE:
             raise ProviderConfigError(
-                f"LLM_PROVIDER={provider!r} is not one of "
-                f"{sorted(config.LLM_SEMAPHORE)}, check .env"
+                f"LLM provider {name!r} is not one of "
+                f"{sorted(config.LLM_SEMAPHORE)}, check .env or the request"
             )
-        if provider == "claude-sdk" and os.environ.get("ANTHROPIC_API_KEY"):
+        if name == "claude-sdk" and os.environ.get("ANTHROPIC_API_KEY"):
             raise ProviderConfigError(
-                "REFUSING TO RUN: LLM_PROVIDER=claude-sdk but ANTHROPIC_API_KEY "
+                "REFUSING TO RUN: provider claude-sdk but ANTHROPIC_API_KEY "
                 "is set. A set key silently shadows subscription auth and would "
                 "bill API credits without you noticing. Unset the key (or switch "
                 "provider) and re-run."
             )
-        _ADAPTER = LLMAdapter(provider)
-    return _ADAPTER
+        _ADAPTERS[name] = LLMAdapter(name)
+    return _ADAPTERS[name]
 
 
-async def probe(ctx: RunContext) -> None:
-    """One cheap startup call proving the configured provider actually
-    works (subscription auth for claude-sdk, a running server for ollama).
-    Fails loudly, a broken provider must never degrade into silence."""
-    global _PROBED
-    if _PROBED:
+async def probe(ctx: RunContext, provider: str | None = None) -> None:
+    """One cheap startup call proving the chosen provider actually works
+    (subscription auth for claude-sdk, a running server for ollama), once
+    per provider per process. Fails loudly, a broken provider must never
+    degrade into silence."""
+    adapter = get_llm(provider)
+    if adapter.provider in _PROBED:
         return
-    adapter = get_llm()
 
     class _Probe(BaseModel):
         ok: bool
@@ -228,4 +229,4 @@ async def probe(ctx: RunContext) -> None:
             f"LLM provider {adapter.provider!r} failed its startup probe "
             f"({result.error}), {hint}"
         )
-    _PROBED = True
+    _PROBED.add(adapter.provider)

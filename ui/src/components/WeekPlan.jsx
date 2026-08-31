@@ -15,6 +15,7 @@ const EDGE = {
 export function WeekView({ plan }) {
   const [mode, setMode] = useState("tot");
   const [confirmingWeek, setConfirmingWeek] = useState(false);
+  const [approving, setApproving] = useState(false);
   const [written, setWritten] = useState(null);
   const [feedback, setFeedback] = useState(null);
   const [savedNote, setSavedNote] = useState(null);
@@ -30,12 +31,15 @@ export function WeekView({ plan }) {
   const writable = (winner.picks || []).filter((p) => p.window);
 
   const approveWeek = async () => {
+    if (approving) return; // a double-click must not write the week twice
+    setApproving(true);
     const result = await approve({
       events: writable.map((p) => ({
         name: titleCase(p.name), date: p.date, window: p.window,
         reason: `weekly plan pick (${p.category})`,
       })),
     }).catch((error) => ({ error: String(error.message || error) }));
+    setApproving(false);
     setConfirmingWeek(false);
     setWritten(result);
   };
@@ -164,8 +168,11 @@ export function WeekView({ plan }) {
               nothing writes without it.
             </p>
             <div className="row">
-              <button className="btn quiet" onClick={() => setConfirmingWeek(false)}>Cancel</button>
-              <button className="btn primary" onClick={approveWeek}>Confirm all</button>
+              <button className="btn quiet" disabled={approving}
+                onClick={() => setConfirmingWeek(false)}>Cancel</button>
+              <button className="btn primary" disabled={approving} onClick={approveWeek}>
+                {approving ? "writing..." : "Confirm all"}
+              </button>
             </div>
           </div>
         </div>
@@ -206,6 +213,7 @@ export function WeekView({ plan }) {
 export default function WeekPlan({ active = true }) {
   const [state, setState] = useState({ loading: true });
   const [liveRecords, setLiveRecords] = useState(null);
+  const [starting, setStarting] = useState(false);
   const abortRef = useRef(null);
   const watchingRef = useRef(null); // trace id currently being watched
 
@@ -237,14 +245,20 @@ export default function WeekPlan({ active = true }) {
         setState((s) => ({ ...s, error: String(error.message || error) }));
       }
     }
-    watchingRef.current = null;
+    // Only the CURRENT watcher may clear the marker; an old one finishing
+    // late must not erase a newer watcher's guard.
+    if (watchingRef.current === traceId) watchingRef.current = null;
   };
 
   const runLive = async () => {
+    if (starting || liveRecords) return;
+    setStarting(true); // disabled from the CLICK, not from the first poll
     try {
       const started = await startWeek();
+      setStarting(false);
       await watchLive(started.trace_id);
     } catch (error) {
+      setStarting(false);
       setState((s) => ({ ...s, error: String(error.message || error) }));
     }
   };
@@ -269,12 +283,13 @@ export default function WeekPlan({ active = true }) {
           <span className="sub">week of {state.data.plan.week_start} · {state.data.trace}</span>
         )}
         <span className="spacer" />
-        <button className="btn" onClick={runLive} disabled={!!liveRecords}
+        <button className="btn" onClick={runLive}
+          disabled={starting || !!liveRecords}
           title="runs 7 daily plans plus the beam search; several minutes">
-          {liveRecords ? "running…" : "Run live (minutes)"}
+          {starting ? "starting…" : liveRecords ? "running…" : "Run live (minutes)"}
         </button>
       </div>
-      {liveRecords && <FlowView records={liveRecords} live />}
+      {liveRecords && <FlowView records={liveRecords} live mode="week" />}
       {state.error && (
         <div className={state.data ? "callout warn" : "empty"}>
           {!state.data && <div className="big-ico"><CalendarIcon size={34} /></div>}
