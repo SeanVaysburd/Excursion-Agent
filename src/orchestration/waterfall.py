@@ -88,6 +88,8 @@ class DayPlan(BaseModel):
     gated: dict[str, list[str]] = Field(default_factory=dict)
     gate_reasons: dict[str, list[str]] = Field(default_factory=dict)
     slots: dict[str, list[ScoredCandidate]] = Field(default_factory=dict)
+    scored_summary: list[dict] = Field(default_factory=list)  # ALL scored
+    cold_candidates: list[str] = Field(default_factory=list)
     self_reports: dict[str, str] = Field(default_factory=dict)
     cold_starts: dict[str, bool] = Field(default_factory=dict)
     groundedness: dict[str, dict] = Field(default_factory=dict)
@@ -322,14 +324,21 @@ async def run_daily(
     plan.lifers = all_lifers
 
     nature_memory: list[str] = []
+    cold_candidate_ids: set[str] = set()
     for site in sites:
         window = first_ok_window(site["category"])
         if window is None:
             continue
-        nature_memory.extend(
-            await _memory_lines(ctx, season, site["category"], site["name"],
-                                time_of_day(window_starts[window]), weekday, window)
-        )
+        site_lines = await _memory_lines(
+            ctx, season, site["category"], site["name"],
+            time_of_day(window_starts[window]), weekday, window)
+        nature_memory.extend(site_lines)
+        if not site_lines:
+            # Cold start is a per-CONTEXT fact, not a per-domain one: one
+            # unlogged activity inside a well-logged domain must still get
+            # the low-confidence override (spec: reason states the cold
+            # start; code enforces).
+            cold_candidate_ids.add(f"site@{site['id']}")
     nature_sources = sources_common + [
         {"source": "ebird",
          "status": bird_results[r]["recent"].status,
@@ -469,6 +478,7 @@ async def run_daily(
             lifer_evidence=lifer_evidence, soft_windows=soft_windows,
             window_minutes=window_minutes, window_starts=window_starts,
             dest_meta=dest_meta, mta_by_route=mta_by_route,
+            cold_candidate_ids=cold_candidate_ids if domain == "nature" else set(),
         )
         logger.validation("groundedness", stats.ids_emitted,
                           stats.candidates_dropped, stats.ids_stripped,
@@ -485,6 +495,18 @@ async def run_daily(
         all_scored.extend(scored)
 
     plan.slots = top_per_window(all_scored)
+    plan.cold_candidates = sorted(cold_candidate_ids)
+    plan.scored_summary = [
+        {
+            "candidate_id": c.candidate_id, "name": c.base.name,
+            "domain": c.domain, "window": c.base.window,
+            "final_score": round(c.final_score, 1), "confidence": c.confidence,
+            "pruned": c.pruned, "prune_reason": c.prune_reason,
+            "cold_start": any(a.label == "cold_start" for a in c.adjustments),
+            "reason": c.base.reason,
+        }
+        for c in sorted(all_scored, key=lambda c: (-c.final_score, c.candidate_id))
+    ]
 
     # ---- final hard-constraint gate (0-violations metric) ----------------
     hard_blocks = [

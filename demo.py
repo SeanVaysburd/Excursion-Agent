@@ -244,6 +244,18 @@ async def run_scenario(name: str, ctx: RunContext, args) -> None:
         elif name == "S3":
             plan = await scenario_daily(ctx, logger, args, extra_sites=[SEBAGO_SITE])
             escalated = plan.escalated
+            sebago = next((c for c in plan.scored_summary
+                           if c["candidate_id"] == "site@sebago-canoe-club"), None)
+            print("\n  S3 cold-start check:")
+            if sebago is None:
+                print("    the model omitted the kayaking candidate from its "
+                      "scored output this run -- re-run S3 (honest miss, not "
+                      "a crash)")
+            else:
+                print(f"    {sebago['name']}: final={sebago['final_score']} "
+                      f"confidence={sebago['confidence']} "
+                      f"cold_start={sebago['cold_start']}")
+                print(f"    reason: {sebago['reason'][:140]}")
         elif name == "S4":
             plan = await scenario_daily(ctx, logger, args)
             print(f"\n  S4 lifer check: {len(plan.lifers)} potential lifer(s): "

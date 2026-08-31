@@ -48,6 +48,7 @@ def process_report(
     window_starts: dict,
     dest_meta: dict[str, dict],
     mta_by_route: dict[str, list[dict]],
+    cold_candidate_ids: set[str] | None = None,
 ) -> tuple[list[ScoredCandidate], GroundednessStats, str]:
     """Run steps 1-7 for one agent's report. Returns (survivors sorted by
     final_score desc, groundedness stats, self-report finding summary)."""
@@ -63,12 +64,19 @@ def process_report(
     for base in grounded:
         candidate = ScoredCandidate(base=base, domain=domain, confidence=base.confidence)
 
-        # 2 -- cold-start override
-        if cold_start and candidate.confidence != "low":
+        # 2 -- cold-start override: per-domain (the whole pack was cold) OR
+        # per-candidate (one unlogged context inside a warm domain -- e.g.
+        # kayaking among well-logged birding sites).
+        candidate_cold = base.candidate_id in (cold_candidate_ids or set())
+        if cold_start or candidate_cold:
             candidate.confidence = "low"
             candidate.adjustments.append(
-                Adjustment(label="cold_start", delta=0.0,
-                           note="no relevant history above the similarity cutoff")
+                Adjustment(
+                    label="cold_start", delta=0.0,
+                    note=("no relevant history above the similarity cutoff"
+                          if cold_start else
+                          "no logged history for this activity/site "
+                          "(cold start within a warm domain)"))
             )
 
         # 3 -- lifer bonus (nature only; code-side; species NAMED)
