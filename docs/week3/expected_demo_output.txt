@@ -1,0 +1,240 @@
+==============================================================================
+EXCURSION AGENT -- SEMANTIC MEMORY OVER PAST EXCURSION FEEDBACK
+==============================================================================
+
+  Retrieval covers one thing: the free-text notes from past excursions.
+  Weather, eBird, transit and calendar are structured API calls and are not
+  part of this layer.
+
+  entries indexed   20
+  chunking          one entry = one node, no splitting
+  embedding model   all-MiniLM-L6-v2 (local, no API key)
+  vector store      Chroma, persistent, cosine space
+  pre-filter        none -- semantic search over the full corpus
+  candidates        7, re-ranked down to 3
+  weights           semantic 0.6, season 0.15, type 0.15, recency 0.1
+  similarity cutoff 0.550
+
+==============================================================================
+BLOCK 1 -- SCENARIO SETUP
+==============================================================================
+
+  Planning context
+  --------------------------------------------------------------------------
+    date            Saturday, 16 May 2026
+    season          spring
+    free window     06:00-14:00
+    time of day     morning
+    activity        birding
+    site            Jamaica Bay Wildlife Refuge
+
+  Query string sent to the retriever
+  --------------------------------------------------------------------------
+
+    "spring birding trip to Jamaica Bay Wildlife Refuge, Saturday morning. How
+    did past trips like this go -- timing, crowds, conditions, and what made
+    them good or bad?"
+
+==============================================================================
+BLOCK 2 -- RETRIEVAL TRACE
+==============================================================================
+
+  Stage 1 -- semantic search over 20 entries, top_k = 7
+  --------------------------------------------------------------------------
+
+    #  entry  site                         date         rating  similarity
+    ----------------------------------------------------------------------
+    1  e02    Jamaica Bay Wildlife Refuge  2025-05-17     4/10       0.820
+        "Went midday on a Saturday. Packed with people, birds were quiet, and
+        the West Pond ..."
+    2  e01    Jamaica Bay Wildlife Refuge  2025-05-04     9/10       0.726
+        "Early start, 6:15am arrival. Big warbler morning, twelve species in
+        the gardens before the crowds ..."
+    3  e19    Jamaica Bay Wildlife Refuge  2026-05-09     8/10       0.713
+        "Early again, 6am. Strong migration overnight and it showed. Confirms
+        that early plus good radar ..."
+    4  e07    Central Park Ramble          2026-04-19     5/10       0.579
+        "Good birds but very crowded even at 7am. Hard to enjoy with that many
+        people ..."
+    5  e06    Prospect Park                2025-10-05     6/10       0.541
+        "Convenient and easy to get to, but heavily birded. Decent migrants,
+        though I was following ..."
+    6  e03    Marine Park Salt Marsh       2025-05-11     8/10       0.531
+        "Timed it to the falling tide. Good shorebird numbers on the exposed
+        flats. Quiet, almost ..."
+    7  e04    Marine Park Salt Marsh       2025-06-22     3/10       0.530
+        "High tide the whole window, no flats exposed, nothing to look at. Hot
+        and buggy. ..."
+
+  Stage 2 -- composite re-rank
+  --------------------------------------------------------------------------
+
+    composite = 0.600*semantic + 0.150*season + 0.150*type + 0.100*recency
+
+    entry    semantic   season    type   recency   composite   cutoff
+    -----------------------------------------------------------------
+    e19         0.713    1.000   1.000     1.000       0.828     pass
+    e02         0.820    1.000   1.000     0.035       0.796     pass
+    e07         0.579    1.000   1.000     0.946       0.742     pass
+    e01         0.726    1.000   1.000     0.000       0.735     pass
+    e03         0.531    1.000   1.000     0.019       0.621     DROP
+    e04         0.530    0.500   1.000     0.132       0.556     DROP
+    e06         0.541    0.000   1.000     0.416       0.516     DROP
+
+    3 of 7 scored below the 0.550 similarity cutoff and are ineligible
+    whatever their composite. The cutoff is applied to raw semantic similarity
+    before re-ranking, so a season or recency bonus cannot lift an irrelevant
+    entry over the bar.
+
+  Stage 3 -- final 3 handed to the planner
+  --------------------------------------------------------------------------
+
+    1. e19   composite 0.828   semantic 0.713   rated 8/10
+       Jamaica Bay Wildlife Refuge  |  2026-05-09  |  spring  |  birding
+       "Early again, 6am. Strong migration overnight and it showed. Confirms
+       that early plus good radar ..."
+
+    2. e02   composite 0.796   semantic 0.820   rated 4/10
+       Jamaica Bay Wildlife Refuge  |  2025-05-17  |  spring  |  birding
+       "Went midday on a Saturday. Packed with people, birds were quiet, and
+       the West Pond ..."
+
+    3. e07   composite 0.742   semantic 0.579   rated 5/10
+       Central Park Ramble  |  2026-04-19  |  spring  |  birding
+       "Good birds but very crowded even at 7am. Hard to enjoy with that many
+       people ..."
+
+    semantic order:  e02 > e01 > e19 > e07
+    after re-rank:   e19 > e02 > e07 > e01
+    Re-ranking changed the order, so the top 3 is not the top 3 by similarity
+    alone.
+
+==============================================================================
+BLOCK 3 -- OUTPUT COMPARISON
+==============================================================================
+
+  (a) WITHOUT RETRIEVAL -- no long-term memory consulted
+  --------------------------------------------------------------------------
+
+      recommendation  Head out mid-morning once the day has warmed up at
+                      Jamaica Bay Wildlife Refuge.
+      time window     08:00-12:00
+      confidence      low -- nothing here is specific to you or to this site
+
+      reasoning
+        - Birding at Jamaica Bay Wildlife Refuge for about 4 hours.
+        - Anywhere in the 06:00-14:00 window works; 08:00 is a reasonable
+          default start.
+        - Check weather and transit before leaving.
+
+      cautions
+        - Bring binoculars and check the forecast for rain.
+
+  (b) WITH RETRIEVAL -- conditioned on the entries selected above
+  --------------------------------------------------------------------------
+
+      recommendation  Go early: be at Jamaica Bay Wildlife Refuge for 06:00,
+                      and treat 09:30 as the soft end of the good part.
+      time window     06:00-09:30
+      confidence      high -- 3 matched entries, 2 at this exact site, ratings
+                      4-8/10
+
+      reasoning
+        - Your best spring outings here started at first light -- e19
+          (2026-05-09, Jamaica Bay Wildlife Refuge, rated 8/10) is the pattern
+          to repeat.
+        - The failure mode is the late start, not the site: e02 (2025-05-17,
+          Jamaica Bay Wildlife Refuge, rated 4/10) was the same place in the
+          same season.
+        - That leaves 09:30-14:00 of the free window. Spend it somewhere
+          quieter or head home -- do not wait it out here.
+
+      cautions
+        - Crowds are the recurring complaint at this site -- the early window
+          is what buys you the quiet, not luck.
+
+      driven by these retrieved entries
+        e19 (2026-05-09, Jamaica Bay Wildlife Refuge, rated 8/10)
+        e02 (2025-05-17, Jamaica Bay Wildlife Refuge, rated 4/10)
+        e07 (2026-04-19, Central Park Ramble, rated 5/10)
+
+  DIFFERENCE
+  --------------------------------------------------------------------------
+
+                      (a) without             (b) with
+      --------------------------------------------------------------
+      time window     08:00-12:00             06:00-09:30
+      confidence      low                     high
+      basis           generic defaults        e19, e02, e07
+
+      The recommended window moved from 08:00-12:00 to 06:00-09:30. The
+      reasoning changed with it: (a) argues from generic defaults, (b) argues
+      from e19, e02, e07 and names them.
+
+==============================================================================
+BLOCK 4 -- COLD START / THRESHOLD DEMO
+==============================================================================
+
+  Planning context
+  --------------------------------------------------------------------------
+    date            Saturday, 11 July 2026
+    season          summer
+    free window     08:00-13:00
+    activity        kayaking
+    site            Sebago Canoe Club
+
+  Query string sent to the retriever
+  --------------------------------------------------------------------------
+
+    "summer kayaking trip to Sebago Canoe Club, Saturday morning. How did past
+    trips like this go -- timing, crowds, conditions, and what made them good
+    or bad?"
+
+  Retrieved candidates, all scored against a 0.550 cutoff
+  --------------------------------------------------------------------------
+
+    #  entry  site                         date         similarity  status
+    ----------------------------------------------------------------------
+    1  e08    Palisades Interstate Park    2025-11-02        0.443   below
+    2  e12    Governors Island             2025-06-07        0.431   below
+    3  e09    Palisades Interstate Park    2025-07-13        0.425   below
+    4  e04    Marine Park Salt Marsh       2025-06-22        0.417   below
+    5  e13    Queens Night Market          2025-09-28        0.402   below
+    6  e02    Jamaica Bay Wildlife Refuge  2025-05-17        0.386   below
+    7  e03    Marine Park Salt Marsh       2025-05-11        0.379   below
+
+  Threshold decision
+  --------------------------------------------------------------------------
+
+    best similarity   0.443
+    cutoff            0.550
+    entries clearing  0
+    outcome           NO RELEVANT HISTORY -- cold-start fallback
+
+    Nothing reached the re-ranking stage, so the composite score never ran.
+    The agent returns no history rather than serving the closest available
+    note as if it were experience.
+
+  Fallback recommendation -- unpersonalized scoring
+  --------------------------------------------------------------------------
+
+      recommendation  Plan a kayaking outing in the free window at Sebago
+                      Canoe Club.
+      time window     08:30-12:30
+      confidence      low -- nothing here is specific to you or to this site
+
+      reasoning
+        - Kayaking at Sebago Canoe Club for about 4 hours.
+        - Anywhere in the 08:00-13:00 window works; 08:30 is a reasonable
+          default start.
+        - Check weather and transit before leaving.
+
+      cautions
+        - Check conditions before you go.
+        - First logged outing of this kind. Whatever happens, log it -- it is
+          what makes the next one better.
+
+    Confidence is reported as 'low', and the basis line states the cold start
+    outright: no relevant history (all 7 candidates fell below the 0.55
+    similarity cutoff (best was 0.443)) -- unpersonalized fallback
+
