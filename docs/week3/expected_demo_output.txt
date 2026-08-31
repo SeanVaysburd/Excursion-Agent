@@ -44,27 +44,27 @@ BLOCK 2 -- RETRIEVAL TRACE
 
     #  entry  site                         date         rating  similarity
     ----------------------------------------------------------------------
-    1  e02    Jamaica Bay Wildlife Refuge  2025-05-17     4/10       0.820
-        "Went midday on a Saturday. Packed with people, birds were quiet, and
-        the West Pond ..."
-    2  e01    Jamaica Bay Wildlife Refuge  2025-05-04     9/10       0.726
-        "Early start, 6:15am arrival. Big warbler morning, twelve species in
-        the gardens before the crowds ..."
-    3  e19    Jamaica Bay Wildlife Refuge  2026-05-09     8/10       0.713
-        "Early again, 6am. Strong migration overnight and it showed. Confirms
-        that early plus good radar ..."
-    4  e07    Central Park Ramble          2026-04-19     5/10       0.579
-        "Good birds but very crowded even at 7am. Hard to enjoy with that many
-        people ..."
-    5  e06    Prospect Park                2025-10-05     6/10       0.541
-        "Convenient and easy to get to, but heavily birded. Decent migrants,
-        though I was following ..."
-    6  e03    Marine Park Salt Marsh       2025-05-11     8/10       0.531
-        "Timed it to the falling tide. Good shorebird numbers on the exposed
-        flats. Quiet, almost ..."
-    7  e04    Marine Park Salt Marsh       2025-06-22     3/10       0.530
-        "High tide the whole window, no flats exposed, nothing to look at. Hot
-        and buggy. ..."
+    1  e02    Jamaica Bay Wildlife Refuge  2025-05-17     4/10       0.799
+        "went midday on a saturday like an idiot. west pond trail wall to wall
+        people, ..."
+    2  e01    Jamaica Bay Wildlife Refuge  2025-05-04     9/10       0.757
+        "in by 6:15am. gardens were popping, twelve warbler species before the
+        crowds rolled in. bailed ..."
+    3  e19    Jamaica Bay Wildlife Refuge  2026-05-09     8/10       0.699
+        "6am again. big overnight push on the radar and it delivered. early
+        plus good radar ..."
+    4  e07    Central Park Ramble          2026-04-19     5/10       0.594
+        "good birds, stupid crowded even at 7am. hard to enjoy when the path
+        is basically ..."
+    5  e04    Marine Park Salt Marsh       2025-06-22     3/10       0.547
+        "high tide the whole window so no flats, nothing to look at. hot and
+        buggy. ..."
+    6  e03    Marine Park Salt Marsh       2025-05-11     8/10       0.535
+        "timed the falling tide on purpose and it paid off, flats covered in
+        shorebirds. barely ..."
+    7  e05    Floyd Bennett Field          2025-09-14     7/10       0.529
+        "grassland edges decent, few sparrows and a kestrel. wind was ripping
+        tho which kept the ..."
 
   Stage 2 -- composite re-rank
   --------------------------------------------------------------------------
@@ -73,13 +73,13 @@ BLOCK 2 -- RETRIEVAL TRACE
 
     entry    semantic   season    type   recency   composite   cutoff
     -----------------------------------------------------------------
-    e19         0.713    1.000   1.000     1.000       0.828     pass
-    e02         0.820    1.000   1.000     0.035       0.796     pass
-    e07         0.579    1.000   1.000     0.946       0.742     pass
-    e01         0.726    1.000   1.000     0.000       0.735     pass
-    e03         0.531    1.000   1.000     0.019       0.621     DROP
-    e04         0.530    0.500   1.000     0.132       0.556     DROP
-    e06         0.541    0.000   1.000     0.416       0.516     DROP
+    e19         0.699    1.000   1.000     1.000       0.819     pass
+    e02         0.799    1.000   1.000     0.035       0.783     pass
+    e01         0.757    1.000   1.000     0.000       0.754     pass
+    e07         0.594    1.000   1.000     0.946       0.751     pass
+    e03         0.535    1.000   1.000     0.019       0.623     DROP
+    e04         0.547    0.500   1.000     0.132       0.567     DROP
+    e05         0.529    0.000   1.000     0.359       0.504     DROP
 
     3 of 7 scored below the 0.550 similarity cutoff and are ineligible
     whatever their composite. The cutoff is applied to raw semantic similarity
@@ -89,23 +89,23 @@ BLOCK 2 -- RETRIEVAL TRACE
   Stage 3 -- final 3 handed to the planner
   --------------------------------------------------------------------------
 
-    1. e19   composite 0.828   semantic 0.713   rated 8/10
+    1. e19   composite 0.819   semantic 0.699   rated 8/10
        Jamaica Bay Wildlife Refuge  |  2026-05-09  |  spring  |  birding
-       "Early again, 6am. Strong migration overnight and it showed. Confirms
-       that early plus good radar ..."
+       "6am again. big overnight push on the radar and it delivered. early
+       plus good radar ..."
 
-    2. e02   composite 0.796   semantic 0.820   rated 4/10
+    2. e02   composite 0.783   semantic 0.799   rated 4/10
        Jamaica Bay Wildlife Refuge  |  2025-05-17  |  spring  |  birding
-       "Went midday on a Saturday. Packed with people, birds were quiet, and
-       the West Pond ..."
+       "went midday on a saturday like an idiot. west pond trail wall to wall
+       people, ..."
 
-    3. e07   composite 0.742   semantic 0.579   rated 5/10
-       Central Park Ramble  |  2026-04-19  |  spring  |  birding
-       "Good birds but very crowded even at 7am. Hard to enjoy with that many
-       people ..."
+    3. e01   composite 0.754   semantic 0.757   rated 9/10
+       Jamaica Bay Wildlife Refuge  |  2025-05-04  |  spring  |  birding
+       "in by 6:15am. gardens were popping, twelve warbler species before the
+       crowds rolled in. bailed ..."
 
     semantic order:  e02 > e01 > e19 > e07
-    after re-rank:   e19 > e02 > e07 > e01
+    after re-rank:   e19 > e02 > e01 > e07
     Re-ranking changed the order, so the top 3 is not the top 3 by similarity
     alone.
 
@@ -136,12 +136,12 @@ BLOCK 3 -- OUTPUT COMPARISON
       recommendation  Go early: be at Jamaica Bay Wildlife Refuge for 06:00,
                       and treat 09:30 as the soft end of the good part.
       time window     06:00-09:30
-      confidence      high -- 3 matched entries, 2 at this exact site, ratings
-                      4-8/10
+      confidence      high -- 3 matched entries, 3 at this exact site, ratings
+                      4-9/10
 
       reasoning
-        - Your best spring outings here started at first light -- e19
-          (2026-05-09, Jamaica Bay Wildlife Refuge, rated 8/10) is the pattern
+        - Your best spring outings here started at first light -- e01
+          (2025-05-04, Jamaica Bay Wildlife Refuge, rated 9/10) is the pattern
           to repeat.
         - The failure mode is the late start, not the site: e02 (2025-05-17,
           Jamaica Bay Wildlife Refuge, rated 4/10) was the same place in the
@@ -156,7 +156,7 @@ BLOCK 3 -- OUTPUT COMPARISON
       driven by these retrieved entries
         e19 (2026-05-09, Jamaica Bay Wildlife Refuge, rated 8/10)
         e02 (2025-05-17, Jamaica Bay Wildlife Refuge, rated 4/10)
-        e07 (2026-04-19, Central Park Ramble, rated 5/10)
+        e01 (2025-05-04, Jamaica Bay Wildlife Refuge, rated 9/10)
 
   DIFFERENCE
   --------------------------------------------------------------------------
@@ -165,11 +165,11 @@ BLOCK 3 -- OUTPUT COMPARISON
       --------------------------------------------------------------
       time window     08:00-12:00             06:00-09:30
       confidence      low                     high
-      basis           generic defaults        e19, e02, e07
+      basis           generic defaults        e19, e02, e01
 
       The recommended window moved from 08:00-12:00 to 06:00-09:30. The
       reasoning changed with it: (a) argues from generic defaults, (b) argues
-      from e19, e02, e07 and names them.
+      from e19, e02, e01 and names them.
 
 ==============================================================================
 BLOCK 4 -- COLD START / THRESHOLD DEMO
@@ -195,18 +195,18 @@ BLOCK 4 -- COLD START / THRESHOLD DEMO
 
     #  entry  site                         date         similarity  status
     ----------------------------------------------------------------------
-    1  e08    Palisades Interstate Park    2025-11-02        0.443   below
-    2  e12    Governors Island             2025-06-07        0.431   below
-    3  e09    Palisades Interstate Park    2025-07-13        0.425   below
-    4  e04    Marine Park Salt Marsh       2025-06-22        0.417   below
-    5  e13    Queens Night Market          2025-09-28        0.402   below
-    6  e02    Jamaica Bay Wildlife Refuge  2025-05-17        0.386   below
-    7  e03    Marine Park Salt Marsh       2025-05-11        0.379   below
+    1  e08    Palisades Interstate Park    2025-11-02        0.503   below
+    2  e12    Governors Island             2025-06-07        0.449   below
+    3  e04    Marine Park Salt Marsh       2025-06-22        0.437   below
+    4  e09    Palisades Interstate Park    2025-07-13        0.432   below
+    5  e10    Harriman State Park          2026-03-08        0.412   below
+    6  e13    Queens Night Market          2025-09-28        0.404   below
+    7  e03    Marine Park Salt Marsh       2025-05-11        0.400   below
 
   Threshold decision
   --------------------------------------------------------------------------
 
-    best similarity   0.443
+    best similarity   0.503
     cutoff            0.550
     entries clearing  0
     outcome           NO RELEVANT HISTORY -- cold-start fallback
@@ -236,5 +236,5 @@ BLOCK 4 -- COLD START / THRESHOLD DEMO
 
     Confidence is reported as 'low', and the basis line states the cold start
     outright: no relevant history (all 7 candidates fell below the 0.55
-    similarity cutoff (best was 0.443)) -- unpersonalized fallback
+    similarity cutoff (best was 0.503)) -- unpersonalized fallback
 

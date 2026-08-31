@@ -207,3 +207,12 @@ baseline would be contaminated by having already read the notes.
   the embedding's doing, not the ranker's.
 - **Headroom below the cutoff is 0.078**, with no pre-filter behind it.
 - **20 synthetic entries.** Every number here should be re-derived on real data.
+
+---
+
+*Note: the corpus notes in `data/excursions.json` were later rewritten into
+a more natural personal-log voice (same entries, dates, sites, ratings, and
+facts — wording only). The replayed LLM outputs and prompts in this folder
+predate that rewrite and quote the original wording; the retrieval traces
+and calibration were regenerated against the current text (cutoff 0.55
+re-verified, margin noted in `calibrate.py` output).*
