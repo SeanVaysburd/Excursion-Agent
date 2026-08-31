@@ -3,10 +3,13 @@
 The Ask surface accepts free text ("what should I do saturday morning?")
 and must decide: plan a DAY, plan a WEEK, ask a clarifying question, or
 politely decline anything that isn't excursion planning. Cheap and
-deterministic first: ISO dates, today/tomorrow, weekday names and the
-word "week" are parsed in code with zero LLM calls. Only genuinely fuzzy
-text goes to one structured LLM call, and its output is still validated
-in code (the model never gets to schedule outside the forecast horizon).
+deterministic first: ISO dates, "september 7th"-style month-day dates,
+today/tomorrow, weekday names and the word "week" are parsed in code with
+zero LLM calls, and the fast path refuses to answer at all when the text
+carries date words it did not fully parse (a bare month, a lone ordinal,
+a numeric date). Everything else goes to one structured LLM call, and its
+output is still validated in code (the model never gets to schedule
+outside the forecast horizon).
 """
 
 from __future__ import annotations
@@ -23,6 +26,32 @@ from src.tools.base import RunContext
 
 WEEKDAYS = ["monday", "tuesday", "wednesday", "thursday", "friday",
             "saturday", "sunday"]
+
+MONTHS = {"jan": 1, "feb": 2, "mar": 3, "apr": 4, "may": 5, "jun": 6,
+          "jul": 7, "aug": 8, "sep": 9, "oct": 10, "nov": 11, "dec": 12}
+
+# "september 7", "sept 7th", "jan 5" (forward order; anything fancier is
+# the LLM's job).
+MONTH_DAY_RE = re.compile(
+    r"\b(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|"
+    r"jul(?:y)?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|"
+    r"dec(?:ember)?)\.?\s+(\d{1,2})(?:st|nd|rd|th)?\b")
+
+# Date-ish text the deterministic branches below do NOT understand: a bare
+# month name ("the week of september..."), a lone ordinal ("the 7th"), or
+# a numeric date ("9/7"). Seeing one of these after the parsers above have
+# already missed means the fast path must NOT guess from the leftover
+# words; the LLM (with code-side validation after it) handles it. This is
+# the guardrail that keeps "plan the week of september 7th" from being
+# silently anchored to the current week just because it contains "week".
+# ("may" only counts followed by a digit; it is too common as a verb.)
+DATE_HINT_RE = re.compile(
+    r"\b(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|jun(?:e)?|"
+    r"jul(?:y)?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|"
+    r"dec(?:ember)?)\b\.?"
+    r"|\bmay\s+\d"
+    r"|\b\d{1,2}(?:st|nd|rd|th)\b"
+    r"|\b\d{1,2}[/.]\d{1,2}\b")
 
 
 class Intent(BaseModel):
@@ -65,15 +94,47 @@ def _weekday_date(name: str, today: date, next_week: bool) -> date:
     return today + timedelta(days=delta + (7 if next_week else 0))
 
 
+def _month_day_date(month: int, day: int, today: date) -> date | None:
+    """Next occurrence of a month/day with no year given: this year if it
+    has not passed, otherwise next year (asking for "jan 5" in December
+    means the coming January). The horizon validation still applies."""
+    for year in (today.year, today.year + 1):
+        try:
+            candidate = date(year, month, day)
+        except ValueError:
+            return None  # e.g. "february 30"; let the LLM ask about it
+        if candidate >= today:
+            return candidate
+    return None
+
+
 def quick_parse(message: str, today: date) -> Intent | None:
-    """Deterministic fast path; returns None when the text is fuzzy."""
+    """Deterministic fast path; returns None when the text is fuzzy.
+
+    The rule that keeps this path safe: it may only answer when it
+    understood the WHOLE date phrase. If the text carries date-ish tokens
+    the parsers here did not consume, it must defer to the LLM instead of
+    guessing from the leftover words ("plan the week of september 7th"
+    must never be anchored to today's week just because it says "week")."""
     text = message.lower().strip()
 
-    iso = re.search(r"\b(\d{4}-\d{2}-\d{2})\b", text)
     wants_week = bool(re.search(r"\bweek(ly)?\b", text)) and "weekend" not in text
 
+    iso = re.search(r"\b(\d{4}-\d{2}-\d{2})\b", text)
     if iso:
         return Intent(kind="week" if wants_week else "day", date=iso.group(1))
+
+    month_day = MONTH_DAY_RE.search(text)
+    if month_day:
+        target = _month_day_date(MONTHS[month_day.group(1)[:3]],
+                                 int(month_day.group(2)), today)
+        if target is not None:
+            return Intent(kind="week" if wants_week else "day",
+                          date=target.isoformat())
+
+    if DATE_HINT_RE.search(text):
+        return None  # date-ish text this parser didn't understand -> LLM
+
     if "today" in text:
         return Intent(kind="day", date=today.isoformat())
     if "tomorrow" in text:

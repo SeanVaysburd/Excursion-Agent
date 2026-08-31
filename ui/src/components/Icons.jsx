@@ -56,8 +56,10 @@ export const AlertIcon = (p) => (
   <I {...p}><path d="M12 3l10 17H2z" /><path d="M12 10v4M12 17.5h.01" /></I>
 );
 export const BirdIcon = (p) => (
-  <I {...p}><path d="M4 19c6 0 11-3 13-8l3-2-3-1-1-3c-4 1-7 5-7 9-2 2-3 3-5 5z" />
-    <path d="M15 7h.01M9 19c0 1 0 2-1 3" /></I>
+  <I {...p}><path d="M3.5 18H11a8 8 0 008-8V7a4 4 0 00-7.3-2.3L2.5 19.5" />
+    <path d="M16 7h.01" />
+    <path d="M19 6.7l2.5.8-2.5 1" />
+    <path d="M9.5 18v3M13.5 17.6V21" /></I>
 );
 export const HikeIcon = (p) => (
   <I {...p}><path d="M3 20l6-9 4 5 3-4 5 8z" /><circle cx="17" cy="5" r="2" /></I>
@@ -65,9 +67,6 @@ export const HikeIcon = (p) => (
 export const PaddleIcon = (p) => (
   <I {...p}><path d="M4 20L18 6" /><path d="M18 6c1.5-1.5 3-1.5 3-1.5S21 6 19.5 7.5 16.5 9 16.5 9 16.5 7.5 18 6z" />
     <path d="M4 20c-1.5 1.5-1.5 3-1.5 3s1.5 0 3-1.5" /></I>
-);
-export const TentIcon = (p) => (
-  <I {...p}><path d="M12 4L2 20h20z" /><path d="M12 9l5 11M12 9l-5 11" /></I>
 );
 export const MuseumIcon = (p) => (
   <I {...p}><path d="M3 9l9-5 9 5" /><path d="M4 9h16v2H4z" />
@@ -127,21 +126,24 @@ export const DotIcon = (p) => (
   <I {...p}><circle cx="12" cy="12" r="2" fill="currentColor" stroke="none" /></I>
 );
 
-// Category icon for a scored candidate (or a weekly pick shaped like one).
+// Category icon for a scored candidate (or a weekly pick, which carries
+// `category` instead of `domain`). Birding gets the bird; events, markets
+// and other mapped locations get the place pin; venues get the museum.
 const CATEGORY = {
   birding: BirdIcon,
   nature: BirdIcon,
   hike: HikeIcon,
   kayaking: PaddleIcon,
-  outdoor_event: TentIcon,
+  outdoor_event: PinIcon,
   indoor: MuseumIcon,
   museum: MuseumIcon,
 };
 
 export function CategoryIcon({ candidate, size = 15 }) {
   const id = candidate?.base?.candidate_id || candidate?.candidate_id || "";
-  let Cmp = CATEGORY[candidate?.domain || ""] || PinIcon;
+  const key = candidate?.domain || candidate?.category || "";
+  let Cmp = CATEGORY[key] || PinIcon;
   if (id.startsWith("venue@")) Cmp = MuseumIcon;
-  else if (id.startsWith("event@")) Cmp = TentIcon;
+  else if (id.startsWith("event@")) Cmp = PinIcon;
   return <Cmp size={size} />;
 }

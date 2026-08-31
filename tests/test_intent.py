@@ -43,6 +43,32 @@ def test_weekend_is_ambiguous():
     assert quick_parse("this weekend", TODAY).kind == "clarify"
 
 
+def test_week_of_a_named_date_uses_that_date():
+    # The reported bug: this used to anchor to TODAY's week because the
+    # fast path stopped at the word "week" and never read the date.
+    intent = quick_parse("can you plan the week of september 7th", TODAY)
+    assert intent.kind == "week" and intent.date == "2026-09-07"
+
+
+def test_month_day_is_a_day_request():
+    assert quick_parse("plan september 12 for me", TODAY).date == "2026-09-12"
+    assert quick_parse("sept 3rd?", TODAY).date == "2026-09-03"
+
+
+def test_month_day_beats_the_weekday_word():
+    assert quick_parse("saturday september 12", TODAY).date == "2026-09-12"
+
+
+def test_past_month_day_rolls_to_next_year():
+    assert quick_parse("plan jan 5", TODAY).date == "2027-01-05"
+
+
+def test_unconsumed_date_hints_defer_to_the_llm():
+    assert quick_parse("plan the week of the 7th", TODAY) is None
+    assert quick_parse("anything on 9/7?", TODAY) is None
+    assert quick_parse("the week of september", TODAY) is None
+
+
 def test_fuzzy_text_falls_through_to_the_llm_path():
     assert quick_parse("got any ideas for me?", TODAY) is None
 
