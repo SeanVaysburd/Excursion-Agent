@@ -422,10 +422,6 @@ output), which is different from the live agent runs here.
 design evolved across the six checkpoints, reversals included, is written
 up in [`docs/development_history.md`](docs/development_history.md).
 
-The code was written with Claude Code as an AI pair programmer. The
-design, the checkpoint decisions, the data vetting and every committed
-run are the author's.
-
 ## Future work
 
 Google Calendar / CalDAV sync (today: bring an .ics), a real routing API
@@ -436,3 +432,8 @@ gate covers rain, temperature and wind), and RRULE expansion.
 ## License
 
 MIT, see [LICENSE](LICENSE).
+
+---
+
+<sub>Written with Claude Code as a pair programmer; the design and the
+decisions are the author's.</sub>
