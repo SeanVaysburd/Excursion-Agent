@@ -216,7 +216,8 @@ SCENARIOS = ("S1", "S2", "S3", "S4", "S5")
 
 async def run_scenario(name: str, ctx: RunContext, args) -> None:
     stamp = args.date.isoformat()
-    trace_path = config.RUNS_DIR / f"sample_{name}_{stamp}.jsonl"
+    tag = args.trace_tag or name
+    trace_path = config.RUNS_DIR / f"sample_{tag}_{stamp}.jsonl"
     trace_path.unlink(missing_ok=True)
     logger = TrajectoryLogger(
         trace_path, run_id=ctx.run_id, scenario=name,
@@ -296,6 +297,10 @@ async def main() -> None:
                              "an error; EVERY trace line is stamped "
                              "injected_failure (simulated, labeled)")
     parser.add_argument("--rebuild-memory", action="store_true")
+    parser.add_argument("--trace-tag", default=None,
+                        help="override the trace filename tag (eval uses "
+                             "'escalation' / 'forced_error_<src>' so fixture "
+                             "runs never clobber scenario traces)")
     args = parser.parse_args()
 
     today = datetime.now(config.TZ).date()
