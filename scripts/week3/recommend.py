@@ -21,7 +21,7 @@ from datetime import datetime, timedelta
 
 from llama_index.core.schema import NodeWithScore
 
-from memory import BAD_RATING, GOOD_RATING, PlanningContext, RetrievalResult
+from src.memory.retrieval import BAD_RATING, GOOD_RATING, PlanningContext, RetrievalResult
 
 
 # --------------------------------------------------------------------------

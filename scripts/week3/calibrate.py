@@ -23,7 +23,7 @@ import numpy as np
 from llama_index.core import Settings
 from llama_index.core.retrievers import VectorIndexRetriever
 
-from memory import SIMILARITY_CUTOFF, ExcursionMemory, PlanningContext, to_cosine
+from src.memory.retrieval import SIMILARITY_CUTOFF, ExcursionMemory, PlanningContext, to_cosine
 
 
 def ctx(season, activity, site, tod="morning", dow="Saturday", window="06:00-14:00"):

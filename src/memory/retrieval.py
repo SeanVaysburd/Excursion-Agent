@@ -27,6 +27,7 @@ wrong answer -- see SIMILARITY_CUTOFF below.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import math
 import shutil
@@ -35,6 +36,10 @@ from datetime import date
 from pathlib import Path
 
 import chromadb
+
+# Importing config FIRST is load-bearing: it pins LLAMA_INDEX_CACHE_DIR (and
+# offline mode when the weights are already cached) before any model load.
+from src import config
 from llama_index.core import Settings, StorageContext, VectorStoreIndex
 from llama_index.core.llms import MockLLM
 from llama_index.core.node_parser import SentenceSplitter
@@ -44,9 +49,10 @@ from llama_index.core.schema import Document, NodeWithScore
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.vector_stores.chroma import ChromaVectorStore
 
-ROOT = Path(__file__).resolve().parent
+ROOT = Path(__file__).resolve().parents[2]  # src/memory/ -> repo root
 DATA_PATH = ROOT / "data" / "excursions.json"
 PERSIST_DIR = ROOT / "storage" / "chroma"
+CORPUS_HASH_PATH = ROOT / "storage" / "corpus.sha256"
 COLLECTION_NAME = "excursion_memory"
 
 EMBED_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
@@ -76,7 +82,9 @@ TOP_K = 3  # returned to the planner, after re-ranking
 #
 # With the pre-filter gone this cutoff is the ONLY guard against a cold start
 # being answered from the wrong notes. Re-run calibrate.py on real data.
-SIMILARITY_CUTOFF = 0.55
+# Single source of truth is src/config.py; re-exported here because the
+# Week-3 scripts (and the calibration evidence) import it from this module.
+SIMILARITY_CUTOFF = config.SIMILARITY_CUTOFF
 
 # Composite re-ranking. Similarity dominates -- the other three are nudges
 # that break ties and pull the genuinely comparable outing above the merely
@@ -315,11 +323,25 @@ class ExcursionMemory:
             )
         return nodes
 
+    @staticmethod
+    def corpus_hash() -> str:
+        return hashlib.sha256(DATA_PATH.read_bytes()).hexdigest()
+
     @classmethod
     def build(cls, rebuild: bool = False) -> "ExcursionMemory":
         cls.configure_settings()
 
-        if rebuild and PERSIST_DIR.exists():
+        # A count-only check would serve stale entries forever after the
+        # corpus changes (and their memory:eNN evidence ids would point at
+        # records the run never loaded), so the corpus hash participates in
+        # the rebuild decision.
+        current_hash = cls.corpus_hash()
+        stored_hash = (
+            CORPUS_HASH_PATH.read_text().strip()
+            if CORPUS_HASH_PATH.exists()
+            else None
+        )
+        if (rebuild or stored_hash != current_hash) and PERSIST_DIR.exists():
             shutil.rmtree(PERSIST_DIR)
         PERSIST_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -338,8 +360,11 @@ class ExcursionMemory:
             storage_context = StorageContext.from_defaults(vector_store=vector_store)
             index = VectorStoreIndex(nodes, storage_context=storage_context)
         else:
-            # Already persisted: reopen it rather than re-embedding.
+            # Already persisted and corpus unchanged: reopen, don't re-embed.
             index = VectorStoreIndex.from_vector_store(vector_store)
+
+        CORPUS_HASH_PATH.parent.mkdir(parents=True, exist_ok=True)
+        CORPUS_HASH_PATH.write_text(current_hash + "\n")
 
         return cls(index=index, collection=collection, docs=docs)
 

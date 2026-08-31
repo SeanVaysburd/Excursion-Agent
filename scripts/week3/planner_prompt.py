@@ -16,7 +16,7 @@ same output contract, same request.
 
 from __future__ import annotations
 
-from memory import PlanningContext, RetrievalResult
+from src.memory.retrieval import PlanningContext, RetrievalResult
 
 OUTPUT_CONTRACT = """\
 Answer in exactly this shape, nothing before or after it:

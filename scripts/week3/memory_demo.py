@@ -24,7 +24,7 @@ import argparse
 import textwrap
 from pathlib import Path
 
-from memory import (
+from src.memory.retrieval import (
     CANDIDATE_K,
     SIMILARITY_CUTOFF,
     TOP_K,
@@ -32,14 +32,14 @@ from memory import (
     ExcursionMemory,
     PlanningContext,
 )
-from planner_prompt import build_augmented_prompt, build_baseline_prompt
-from recommend import Plan, baseline_plan, memory_informed_plan
+from scripts.week3.planner_prompt import build_augmented_prompt, build_baseline_prompt
+from scripts.week3.recommend import Plan, baseline_plan, memory_informed_plan
 
 WIDTH = 78
 EXCERPT_WORDS = 15
-ROOT = Path(__file__).resolve().parent
-PROMPT_DIR = ROOT / "prompts"
-LLM_DIR = ROOT / "llm_output"
+ROOT = Path(__file__).resolve().parents[2]  # scripts/week3/ -> repo root
+PROMPT_DIR = ROOT / "docs" / "week3" / "prompts"
+LLM_DIR = ROOT / "docs" / "week3" / "llm_output"
 
 
 # --------------------------------------------------------------------------
