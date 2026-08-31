@@ -24,7 +24,6 @@ from src.agents import lifer as lifer_mod
 from src.agents.schemas import (
     Adjustment,
     AgentReport,
-    CandidateScore,
     ScoredCandidate,
     TripInfo,
     downgrade,

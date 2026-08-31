@@ -34,6 +34,7 @@ from src.tools import (
     ebird,
     inaturalist,
     mta_alerts,
+    nws,
     nyc_events,
     tides,
     weather,
@@ -60,6 +61,14 @@ def get_memory() -> ExcursionMemory:
     if _MEMORY is None:
         _MEMORY = ExcursionMemory.build()
     return _MEMORY
+
+
+def invalidate_memory() -> None:
+    """Called after feedback writes to data/excursions.json: the next
+    get_memory() rebuilds, and the corpus-hash check inside build() makes
+    that rebuild re-embed the changed corpus in this same process."""
+    global _MEMORY
+    _MEMORY = None
 
 
 def season_of(day: date) -> str:
@@ -95,6 +104,7 @@ class DayPlan(BaseModel):
     groundedness: dict[str, dict] = Field(default_factory=dict)
     lifers: list[dict] = Field(default_factory=list)
     notes: list[str] = Field(default_factory=list)
+    degraded_sources: list[str] = Field(default_factory=list)
 
 
 class _Timer:
@@ -118,7 +128,9 @@ async def _memory_lines(
     weekday: str,
     window: str,
 ) -> list[str]:
-    memory = get_memory()
+    # First call builds the index (model load, seconds of blocking work),
+    # so even construction stays off the event loop.
+    memory = await asyncio.to_thread(get_memory)
     planning_ctx = PlanningContext(
         label=f"{season}/{activity}/{site_name}",
         season=season,
@@ -132,14 +144,25 @@ async def _memory_lines(
     lines: list[str] = []
     for candidate in result.kept:
         md = candidate.metadata
-        evidence_id = ctx.registry.register(
-            f"memory:{md['entry_id']}",
-            {"site": md["site"], "rating": md["rating"], "notes": candidate.get_content()},
-        )
-        lines.append(
-            f"{evidence_id} | {md['site']} ({md['season']}, rated {md['rating']}/10, "
-            f"similarity {candidate.similarity:.2f}): {candidate.get_content()}"
-        )
+        note = candidate.get_content()
+        payload = {"site": md["site"], "notes": note}
+        if md.get("rating") is not None:
+            payload["rating"] = md["rating"]
+        evidence_id = ctx.registry.register(f"memory:{md['entry_id']}", payload)
+        if md.get("kind") == "decision":
+            # Accept/reject feedback has no 1-10 rating; the decision and
+            # its stated reason ARE the signal.
+            verdict = "accepted" if md.get("accepted") else "passed on"
+            lines.append(
+                f"{evidence_id} | {md['site']} ({md['season']}, {verdict} a "
+                f"suggestion like this, similarity {candidate.similarity:.2f}): {note}"
+            )
+        else:
+            lines.append(
+                f"{evidence_id} | {md['site']} ({md['season']}, rated "
+                f"{md.get('rating', '?')}/10, "
+                f"similarity {candidate.similarity:.2f}): {note}"
+            )
     return lines
 
 
@@ -190,6 +213,16 @@ async def run_daily(
     with _Timer() as t:
         wx = await weather.fetch_forecast(ctx, config.HOME_LAT, config.HOME_LON)
     wx_hours = wx.data if wx.status == "ok" else []
+    if wx.status == "ok":
+        # The fetch latency is logged ONCE here; per-window gate records
+        # below are in-memory checks and carry no latency of their own.
+        logger.step("weather_gate", "open-meteo", "ok", t.ms,
+                    note=f"forecast fetched, {len(wx_hours)} hourly rows")
+    else:
+        logger.step("weather_gate", "open-meteo", wx.status, t.ms,
+                    note=f"forecast unavailable ({wx.note}); no gate applied",
+                    fallback_taken=True)
+        plan.notes.append("weather unavailable, outdoor candidates carry low confidence")
     gated: dict[str, set[str]] = {}
     for w in windows:
         hours = weather.slice_hours(wx_hours, day, w.start.hour, w.end.hour)
@@ -197,21 +230,18 @@ async def run_daily(
         if is_gated:
             gated[w.label] = set(OUTDOOR_CATEGORIES)
             plan.gate_reasons[w.label] = reasons
-            logger.step("weather_gate", "open-meteo", "ok", t.ms,
+            logger.step("weather_gate", "open-meteo", "ok", None,
                         evidence_ids=evidence,
                         note=f"window {w.label} gated: {'; '.join(reasons[:2])}")
     plan.gated = {k: sorted(v) for k, v in gated.items()}
-    if wx.status != "ok":
-        logger.step("weather_gate", "open-meteo", wx.status, t.ms,
-                    note=f"forecast unavailable ({wx.note}); no gate applied",
-                    fallback_taken=True)
-        plan.notes.append("weather unavailable, outdoor candidates carry low confidence")
 
     # ---- stage 3: prefetch + evidence packs + parallel agents ------------
     season = season_of(day)
     with _Timer() as t:
-        events_r, mta_r = await asyncio.gather(
-            nyc_events.fetch_events(ctx, day), mta_alerts.fetch_alerts(ctx)
+        events_r, mta_r, nws_r = await asyncio.gather(
+            nyc_events.fetch_events(ctx, day),
+            mta_alerts.fetch_alerts(ctx),
+            nws.fetch_active_alerts(ctx, config.HOME_LAT, config.HOME_LON),
         )
         regions: dict[str, dict] = {}
         for site in sites:
@@ -229,8 +259,16 @@ async def run_daily(
                 inaturalist.fetch_recent(ctx, anchor["lat"], anchor["lng"], region_id),
             )
             if inat.status == "empty":
-                logger.step("prefetch", "inaturalist", "empty", None,
-                            note=f"{region_id}: widening radius once", fallback_taken=True)
+                # The spec fallback, for real: one refetch at double radius.
+                inat = await inaturalist.fetch_recent(
+                    ctx, anchor["lat"], anchor["lng"], region_id,
+                    radius_km=config.INAT_RADIUS_KM * 2)
+                widened = "found data" if inat.status == "ok" else "still empty"
+                logger.step("prefetch", "inaturalist", inat.status, None,
+                            note=(f"{region_id}: empty at {config.INAT_RADIUS_KM:.0f} km, "
+                                  f"refetched at {config.INAT_RADIUS_KM * 2:.0f} km, "
+                                  f"{widened}"),
+                            fallback_taken=True)
             bird_results[region_id] = {"recent": recent, "notable": notable, "inat": inat}
         coastal_station = next(
             (s.get("tide_station", config.TIDE_STATION_DEFAULT)
@@ -238,6 +276,22 @@ async def run_daily(
         tides_r = await tides.fetch_tides(ctx, day, coastal_station) if coastal_station else None
     logger.step("prefetch", "sources", "ok", t.ms,
                 note=f"calls so far: {dict(ctx.calls)}")
+
+    # Sources that hard-failed this run: surfaced on the plan so the UI can
+    # tell the user data was missing (Week-6 human-intervention surface;
+    # the run itself proceeds on fallbacks with stated low confidence).
+    degraded: set[str] = set()
+    for name, result in (("open-meteo", wx), ("nws", nws_r), ("mta", mta_r),
+                         ("nyc-events", events_r)):
+        if result.status == "error":
+            degraded.add(name)
+    for feeds in bird_results.values():
+        for key, name in (("recent", "ebird"), ("inat", "inaturalist")):
+            if feeds[key].status == "error":
+                degraded.add(name)
+    if tides_r and tides_r.status == "error":
+        degraded.add("noaa-tides")
+    plan.degraded_sources = sorted(degraded)
 
     mta_by_route = mta_r.data if mta_r.status == "ok" else {}
 
@@ -259,8 +313,17 @@ async def run_daily(
                 f"{h.evidence_id} | {h.dt:%H:%M} {h.temp_f:.0f}F, rain {h.precip_prob}%"
                 f", wind {h.wind_mph:.0f} mph"
             )
+    if nws_r.status == "ok":
+        for alert in nws_r.data[:5]:
+            wx_lines.append(
+                f"{alert['evidence_id']} | NWS {alert.get('severity') or 'alert'}: "
+                f"{(alert.get('headline') or alert.get('event') or 'active alert')[:90]}"
+            )
+        plan.notes.append(
+            f"{len(nws_r.data)} active NWS weather alert(s) in evidence")
     sources_common = [
         {"source": "open-meteo", "status": wx.status, "note": wx.note},
+        {"source": "nws", "status": nws_r.status, "note": nws_r.note},
         {"source": "mta", "status": mta_r.status, "note": mta_r.note},
     ]
 
@@ -422,7 +485,7 @@ async def run_daily(
         cold = not memory_lines
         if cold:
             memory_block = (
-                "  none. no relevant history above the similarity cutoff "
+                "  none: no relevant history above the similarity cutoff "
                 "(cold start: plan from live evidence, confidence=low, say so)"
             )
         evidence = list(dict.fromkeys((wx_lines if domain != "indoor" else wx_lines[:4]) + lines))
@@ -458,19 +521,33 @@ async def run_daily(
     # ---- stage 4: pipeline (incl. transit) per agent ---------------------
     all_scored: list[ScoredCandidate] = []
     for (domain, pack), outcome in zip(packs.items(), agent_results):
+        retried = False
         if isinstance(outcome, BaseException):
             report, error_note = None, f"{type(outcome).__name__}: {outcome}"
         else:
             report, llm_result = outcome
             error_note = llm_result.error or ""
+            retried = llm_result.retried
             logger.llm("agent", adapter.provider, 0, report is not None,
                        llm_result.retried, llm_result.error)
+        used_fallback = report is None
         if report is None:
             report = _fallback_report(domain, pack, error_note)
             logger.step("agents", f"{domain}_agent", "error", None,
                         note=f"LLM fallback: {error_note[:120]}", fallback_taken=True)
         plan.self_reports[domain] = report.self_report
         plan.cold_starts[domain] = pack.cold_start
+        # Guardrail visibility: the agent's COMPLETE structured output
+        # (every candidate, score, reason, evidence citation, and its own
+        # self_report) lands in the trace verbatim, so a reviewer can audit
+        # exactly what each agent said before any post-processing.
+        logger.write({
+            "type": "agent_report", "domain": domain,
+            "provider": adapter.provider, "retried": retried,
+            "fallback": used_fallback,
+            "error": error_note[:200] if error_note else None,
+            "report": report.model_dump(),
+        })
 
         scored, stats, finding = process_report(
             domain=domain, report=report, registry_ids=ctx.registry.ids,

@@ -38,7 +38,7 @@ class TrajectoryLogger:
         path.parent.mkdir(parents=True, exist_ok=True)
         self._handle = path.open("a")
 
-    #, core --------------------------------------------------------------
+    # -- core --------------------------------------------------------------
     def write(self, record: dict[str, Any]) -> None:
         record.setdefault("type", "step")
         record["ts"] = datetime.now(config.TZ).isoformat(timespec="milliseconds")
@@ -53,7 +53,7 @@ class TrajectoryLogger:
     def close(self) -> None:
         self._handle.close()
 
-    #, typed helpers -------------------------------------------------------
+    # -- typed helpers -------------------------------------------------------
     def step(self, stage: str, tool: str, status: str, latency_ms: int | None = None,
              evidence_ids: list[str] | None = None, note: str = "",
              fallback_taken: bool = False, **extra: Any) -> None:

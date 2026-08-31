@@ -23,7 +23,7 @@ Answer in exactly this shape, nothing before or after it:
 
 HEADLINE: one sentence telling me what to do.
 WHEN: a concrete time range inside my free window.
-CONFIDENCE: low | moderate | high, then ", " and a short justification.
+CONFIDENCE: the word low, moderate or high, then " | " and a short justification.
 WHY:
 - two to four bullets of reasoning
 CAUTIONS:
@@ -69,7 +69,7 @@ def build_augmented_prompt(ctx: PlanningContext, result: RetrievalResult) -> str
             md = c.metadata
             entries.append(
                 f"  [{md['entry_id']}] {md['date']} | {md['site']} | "
-                f"rated {md['rating']}/10 | similarity {c.similarity:.3f} | "
+                f"rated {md.get('rating', 'n/a')}/10 | similarity {c.similarity:.3f} | "
                 f"composite {c.composite:.3f}\n"
                 f"      \"{c.get_content()}\""
             )

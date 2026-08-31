@@ -56,15 +56,13 @@ def _horizon(today: date) -> tuple[date, date]:
 
 
 def _weekday_date(name: str, today: date, next_week: bool) -> date:
+    """Nearest upcoming weekday; "next <day>" always lands in the week
+    after the nearest one (matching how people say it)."""
     target = WEEKDAYS.index(name)
-    delta = (target - today.weekday()) % 7
-    if delta == 0 and not next_week:
+    delta = (target - today.weekday()) % 7 or 7
+    if name == WEEKDAYS[today.weekday()] and not next_week:
         return today
-    if delta == 0 or next_week:
-        delta = delta or 7
-        if next_week and delta < 7:
-            delta += 0 if delta else 7
-    return today + timedelta(days=delta or 7)
+    return today + timedelta(days=delta + (7 if next_week else 0))
 
 
 def quick_parse(message: str, today: date) -> Intent | None:

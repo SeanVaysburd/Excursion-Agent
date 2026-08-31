@@ -102,7 +102,7 @@ def main() -> None:
             "radius": config.INAT_RADIUS_KM,
             "verifiable": "true",
             "per_page": 3,
-            "fields": "id,observed_on,taxon.name,taxon.preferred_common_name",
+            "fields": "(id:!t,observed_on:!t,taxon:(name:!t,preferred_common_name:!t))",
         },
     )
 

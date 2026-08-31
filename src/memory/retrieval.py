@@ -30,7 +30,6 @@ from __future__ import annotations
 import hashlib
 import json
 import math
-import shutil
 from dataclasses import dataclass, field
 from datetime import date
 from pathlib import Path
@@ -51,8 +50,8 @@ from llama_index.vector_stores.chroma import ChromaVectorStore
 
 ROOT = Path(__file__).resolve().parents[2]  # src/memory/ -> repo root
 DATA_PATH = ROOT / "data" / "excursions.json"
-PERSIST_DIR = ROOT / "storage" / "chroma"
-CORPUS_HASH_PATH = ROOT / "storage" / "corpus.sha256"
+PERSIST_DIR = config.STORAGE_DIR / "chroma"
+CORPUS_HASH_PATH = config.STORAGE_DIR / "corpus.sha256"
 COLLECTION_NAME = "excursion_memory"
 
 EMBED_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
@@ -212,11 +211,6 @@ class RankedCandidate:
     def metadata(self) -> dict:
         return self.node.metadata
 
-    @property
-    def score(self) -> float:
-        """Alias so callers that expect a NodeWithScore keep working."""
-        return self.similarity
-
     def get_content(self) -> str:
         return self.node.get_content()
 
@@ -270,7 +264,7 @@ class ExcursionMemory:
         dates = [date.fromisoformat(d.metadata["date"]) for d in docs]
         self.oldest, self.newest = min(dates), max(dates)
 
-    #, construction ------------------------------------------------------
+    # -- construction ------------------------------------------------------
     @staticmethod
     def configure_settings() -> None:
         Settings.embed_model = HuggingFaceEmbedding(model_name=EMBED_MODEL)
@@ -291,23 +285,35 @@ class ExcursionMemory:
         entries = json.loads(DATA_PATH.read_text())
         docs: list[Document] = []
         for entry in entries:
+            # Entries written through the feedback API carry fields the
+            # seeded corpus lacks: kind ("outing" | "decision"), accepted
+            # (decisions only), source ("user"). Decisions have no rating.
+            # Chroma metadata cannot hold None, so absent fields stay out.
+            metadata = {
+                "entry_id": entry["id"],
+                "date": entry["date"],
+                "season": entry["season"],
+                "type": entry["type"],
+                "site": entry["site"],
+                "kind": entry.get("kind", "outing"),
+            }
+            if entry.get("rating") is not None:
+                metadata["rating"] = entry["rating"]
+            if entry.get("accepted") is not None:
+                metadata["accepted"] = entry["accepted"]
             docs.append(
                 Document(
                     id_=entry["id"],
                     text=entry["notes"],
-                    metadata={
-                        "entry_id": entry["id"],
-                        "date": entry["date"],
-                        "season": entry["season"],
-                        "type": entry["type"],
-                        "site": entry["site"],
-                        "rating": entry["rating"],
-                    },
+                    metadata=metadata,
                     # Season, type and site are part of what a planning query
                     # asks about, so they stay in the embedded text. The id,
-                    # date and rating are for re-ranking and for explaining a
-                    # result, as embedded tokens they are just noise.
-                    excluded_embed_metadata_keys=["entry_id", "date", "rating"],
+                    # date, rating and decision flags are for re-ranking and
+                    # for explaining a result, as embedded tokens they are
+                    # just noise.
+                    excluded_embed_metadata_keys=[
+                        "entry_id", "date", "rating", "kind", "accepted"
+                    ],
                 )
             )
         return docs
@@ -341,11 +347,19 @@ class ExcursionMemory:
             if CORPUS_HASH_PATH.exists()
             else None
         )
-        if (rebuild or stored_hash != current_hash) and PERSIST_DIR.exists():
-            shutil.rmtree(PERSIST_DIR)
         PERSIST_DIR.mkdir(parents=True, exist_ok=True)
 
         client = chromadb.PersistentClient(path=str(PERSIST_DIR))
+        if rebuild or stored_hash != current_hash:
+            # Drop the collection THROUGH the client, never rmtree: chromadb
+            # caches clients per path in-process, so deleting the directory
+            # leaves a live client serving the old data. delete_collection
+            # goes through that same cached client, which is what lets a
+            # running server pick up new feedback without a restart.
+            try:
+                client.delete_collection(COLLECTION_NAME)
+            except Exception:
+                pass  # first build, nothing to drop
         collection = client.get_or_create_collection(
             COLLECTION_NAME,
             # Explicit: the default is L2, and the cutoff is stated in cosine.
@@ -368,7 +382,7 @@ class ExcursionMemory:
 
         return cls(index=index, collection=collection, docs=docs)
 
-    #, retrieval ---------------------------------------------------------
+    # -- retrieval ---------------------------------------------------------
     def _score(self, ctx: PlanningContext, node: NodeWithScore) -> RankedCandidate:
         md = node.metadata
         similarity = node.score or 0.0
@@ -389,7 +403,7 @@ class ExcursionMemory:
             type_match=s_type,
             recency=s_recency,
             composite=composite,
-            passed_cutoff=similarity >= SIMILARITY_CUTOFF,
+            passed_cutoff=False,  # decided by retrieve() against ITS cutoff
         )
 
     def retrieve(

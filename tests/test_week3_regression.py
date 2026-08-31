@@ -3,10 +3,9 @@ checkpoint output, byte-for-byte on the deterministic blocks.
 
 Blocks 1 (setup/query), 2 (retrieval trace) and 4 (cold start) are pure
 functions of the committed corpus + embedding model, so they must match
-docs/week3/expected_demo_output.txt exactly. Block 3 is included in the
-comparison too when present, without --llm it is the deterministic
-rule-based planner, but the assertion is anchored on 1/2/4 first so a
-failure names the retrieval layer, not prose formatting.
+docs/week3/expected_demo_output.txt exactly; block 3 (the rule-based
+planner prose) is deliberately not compared, so a failure always names
+the retrieval layer rather than formatting.
 """
 
 from __future__ import annotations

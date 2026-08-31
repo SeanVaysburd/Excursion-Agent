@@ -69,7 +69,7 @@ class LLMAdapter:
         self._semaphore = asyncio.Semaphore(config.LLM_SEMAPHORE.get(provider, 2))
         self._timeout = config.LLM_TIMEOUT_S.get(provider, 120)
 
-    #, public ------------------------------------------------------------
+    # -- public ------------------------------------------------------------
     async def structured(
         self,
         prompt: str,
@@ -99,7 +99,7 @@ class LLMAdapter:
             provider=self.provider,
         )
 
-    #, internals ---------------------------------------------------------
+    # -- internals ---------------------------------------------------------
     async def _attempt(
         self, prompt: str, schema: type[BaseModel], purpose: str, ctx: RunContext
     ) -> LLMResult:

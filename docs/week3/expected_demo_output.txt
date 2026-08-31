@@ -1,3 +1,4 @@
+Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 12676.82it/s]
 ==============================================================================
 EXCURSION AGENT, SEMANTIC MEMORY OVER PAST EXCURSION FEEDBACK
 ==============================================================================
@@ -119,7 +120,7 @@ BLOCK 3, OUTPUT COMPARISON
       recommendation  Head out mid-morning once the day has warmed up at
                       Jamaica Bay Wildlife Refuge.
       time window     08:00-12:00
-      confidence      low, nothing here is specific to you or to this site
+      confidence      low | nothing here is specific to you or to this site
 
       reasoning
         - Birding at Jamaica Bay Wildlife Refuge for about 4 hours.
@@ -136,11 +137,11 @@ BLOCK 3, OUTPUT COMPARISON
       recommendation  Go early: be at Jamaica Bay Wildlife Refuge for 06:00,
                       and treat 09:30 as the soft end of the good part.
       time window     06:00-09:30
-      confidence      high, 3 matched entries, 2 at this exact site, ratings
+      confidence      high | 3 matched entries, 2 at this exact site, ratings
                       4-8/10
 
       reasoning
-        - Your best spring outings here started at first light -- e19
+        - Your best spring outings here started at first light; e19
           (2026-05-09, Jamaica Bay Wildlife Refuge, rated 8/10) is the pattern
           to repeat.
         - The failure mode is the late start, not the site: e02 (2025-05-17,
@@ -221,7 +222,7 @@ BLOCK 4, COLD START / THRESHOLD DEMO
       recommendation  Plan a kayaking outing in the free window at Sebago
                       Canoe Club.
       time window     08:30-12:30
-      confidence      low, nothing here is specific to you or to this site
+      confidence      low | nothing here is specific to you or to this site
 
       reasoning
         - Kayaking at Sebago Canoe Club for about 4 hours.

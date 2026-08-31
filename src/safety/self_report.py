@@ -75,7 +75,6 @@ def scan(self_report: str) -> SelfReportFinding:
         if re.search(pattern, text)
     ]
     for pattern in NEGATIVE_LEXICON:
-        match = re.search(pattern, text)
-        if match and not _negated(text, match.start()):
+        if any(not _negated(text, m.start()) for m in re.finditer(pattern, text)):
             hits.append(pattern.strip("\\b"))
     return SelfReportFinding(hits=hits, downgrade=bool(hits))

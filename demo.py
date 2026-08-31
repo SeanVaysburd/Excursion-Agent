@@ -251,7 +251,7 @@ async def run_scenario(name: str, ctx: RunContext, args) -> None:
             print("\n  S3 cold-start check:")
             if sebago is None:
                 print("    the model omitted the kayaking candidate from its "
-                      "scored output this run. re-run S3 (honest miss, not "
+                      "scored output this run. Re-run S3 (an honest miss, not "
                       "a crash)")
             else:
                 print(f"    {sebago['name']}: final={sebago['final_score']} "

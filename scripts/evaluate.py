@@ -1,9 +1,10 @@
 """Evaluation harness: real runs -> eval/results.md.
 
 Default mode EXECUTES the full suite (every number in results.md comes
-from a run this invocation performed): S1-S5, the S4 zero-lifers control,
-the escalation fixture, and one labeled forced-error run. --skip-runs
-recomputes results.md from whatever traces already exist in runs/.
+from a run this invocation performed): S1-S5, the S4 fuller-life-list
+control, the escalation fixture, and one labeled forced-error run.
+--skip-runs recomputes results.md from whatever traces already exist in
+runs/.
 
 Every metric is read ONLY from trajectory records; results.md cites each
 source trace with its real timestamp, provider, and eBird-key mode, and
@@ -20,7 +21,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 import statistics
 import subprocess
 import sys
@@ -192,9 +192,10 @@ def compute(traces: dict[str, Path]) -> str:
             flagged |= bool(summary.get("ceiling_flag"))
     lines += ["", "## Call accounting", "",
               f"- External calls across all cited runs: "
-              f"{dict(sorted(totals.items()))} (total {sum(totals.values())}; "
-              f"ceiling {config.CALL_CEILING}; "
-              f"flag {'RAISED' if flagged else 'not raised'}).",
+              f"{dict(sorted(totals.items()))} (total {sum(totals.values())} "
+              f"summed over every cited run; the {config.CALL_CEILING}-call "
+              f"ceiling applies PER RUN and its flag was "
+              f"{'RAISED' if flagged else 'not raised'} in any of them).",
               f"- LLM calls: {dict(sorted(llm_totals.items()))}."]
     weekly = next((r for recs in all_records.values() for r in recs
                    if r["type"] == "weekly_plan"), None)
@@ -272,11 +273,80 @@ def compute(traces: dict[str, Path]) -> str:
                      f"+{bonus:.1f} (cap {config.LIFER_BONUS_CAP}).")
     if control:
         n, bonus, source_label = control
-        lines.append(f"- With the zero-lifers control (*{source_label}*): {n} "
-                     f"lifer(s), bonus +{bonus:.1f}. Same site, same day; "
+        lines.append(f"- With the fuller-life-list control (*{source_label}*): "
+                     f"{n} lifer(s), bonus +{bonus:.1f}. Same site, same day; "
                      f"the delta is the life-list gap.")
     if not (with_gaps and control):
         lines.append("- NOT fully demonstrated yet (need S4 and S4_control runs).")
+
+    # ---- rubric consistency across the three domains ---------------------
+    # The Week-5 tradeoff: parallel specialized agents must not drift into
+    # different strictness. All three share the identical 1-10 anchors
+    # (src/agents/rubric.py); this table shows the resulting raw model
+    # scores per domain so a systematically dominant domain would be
+    # visible here.
+    domain_scores: dict[str, list[float]] = defaultdict(list)
+    basis = "agent_report records (every scored candidate, pre-pruning)"
+    for recs in all_records.values():
+        for r in recs:
+            if r["type"] == "agent_report":
+                for candidate in (r.get("report", {}).get("candidates") or []):
+                    domain_scores[r["domain"]].append(candidate["score"])
+    if not domain_scores:  # traces predating the agent_report record type
+        basis = "day_plan slot survivors (post-pipeline)"
+        for recs in all_records.values():
+            for r in recs:
+                if r["type"] != "day_plan":
+                    continue
+                for members in (r["plan"].get("slots") or {}).values():
+                    for candidate in members:
+                        domain_scores[candidate["domain"]].append(
+                            candidate["base"]["score"])
+    lines += ["", "## Rubric consistency across domains", "",
+              f"Raw model scores (1-10, shared rubric) from {basis}:", "",
+              "| domain | n | mean | min | max |", "|---|---|---|---|---|"]
+    for domain, values in sorted(domain_scores.items()):
+        lines.append(f"| {domain} | {len(values)} | "
+                     f"{statistics.mean(values):.1f} | {min(values)} | "
+                     f"{max(values)} |")
+    if not domain_scores:
+        lines.append("| (no scored candidates found) | 0 | - | - | - |")
+
+    # ---- acceptance + calibration (longitudinal, honest n) ---------------
+    # Week-6 metrics that only exist once a person uses the feedback
+    # surfaces. Decisions live in data/excursions.json (kind=decision,
+    # written through POST /api/feedback); this reports whatever has been
+    # recorded so far and says so, rather than dressing a tiny sample up
+    # as a longitudinal result.
+    try:
+        corpus = json.loads((config.DATA_DIR / "excursions.json").read_text())
+    except (OSError, json.JSONDecodeError):
+        corpus = []
+    decisions = [e for e in corpus if e.get("kind") == "decision"]
+    accepted_n = sum(1 for e in decisions if e.get("accepted"))
+    lines += ["", "## Acceptance and calibration", ""]
+    if decisions:
+        lines.append(f"- **Acceptance rate**: {accepted_n}/{len(decisions)} "
+                     f"suggestions accepted ({accepted_n / len(decisions):.0%}). "
+                     f"Small n; this metric matures with use.")
+        banded = [e for e in decisions if e.get("agent_score") is not None]
+        if banded:
+            lines += ["- **Calibration** (acceptance by the agent's own score "
+                      "for the suggestion):", "",
+                      "| agent score band | decided | accepted |", "|---|---|---|"]
+            bands = [("8.0+", lambda s: s >= 8), ("6.0-7.9", lambda s: 6 <= s < 8),
+                     ("under 6.0", lambda s: s < 6)]
+            for label, member in bands:
+                rows = [e for e in banded if member(e["agent_score"])]
+                if rows:
+                    ok = sum(1 for e in rows if e.get("accepted"))
+                    lines.append(f"| {label} | {len(rows)} | {ok} |")
+    else:
+        lines.append("- No accept/pass decisions recorded yet. The capture "
+                     "mechanism ships in the UI (Accept/Pass on every "
+                     "suggestion card, POST /api/feedback); both metrics "
+                     "compute automatically from recorded decisions on the "
+                     "next evaluate run.")
 
     lines += ["", "---", f"Generated {datetime.now(config.TZ).isoformat(timespec='seconds')} "
               f"by scripts/evaluate.py; trajectory traces in `runs/`."]

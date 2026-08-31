@@ -4,6 +4,16 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Excursion Agent</title>
+    <script>
+      // Set the theme before first paint so dark mode never flashes light.
+      // ?theme=dark|light in the URL wins (shareable forced-theme links).
+      try {
+        var q = new URLSearchParams(location.search).get("theme");
+        var saved = (q === "dark" || q === "light") ? q : localStorage.getItem("ea-theme");
+        document.documentElement.dataset.theme = saved
+          || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+      } catch (e) { document.documentElement.dataset.theme = "light"; }
+    </script>
   </head>
   <body>
     <div id="root"></div>

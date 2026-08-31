@@ -89,7 +89,7 @@ def signals_for(node: NodeWithScore) -> set[str]:
 
 def _cite(node: NodeWithScore) -> str:
     md = node.metadata
-    return f"{md['entry_id']} ({md['date']}, {md['site']}, rated {md['rating']}/10)"
+    return f"{md['entry_id']} ({md['date']}, {md['site']}, rated {md.get('rating', 'n/a')}/10)"
 
 
 # --------------------------------------------------------------------------
@@ -113,7 +113,7 @@ GENERIC_CAUTIONS: dict[str, tuple[str, ...]] = {
 def baseline_plan(ctx: PlanningContext) -> Plan:
     """The recommendation the agent gives with no long-term memory.
 
-    Structured feeds could still fill this in, weather, transit, eBird --
+    Structured feeds could still fill this in (weather, transit, eBird),
     but none of them know how *this user's* previous trips went. Without that,
     the only honest default is the middle of the free window.
     """
@@ -144,7 +144,7 @@ def baseline_plan(ctx: PlanningContext) -> Plan:
         cautions=list(
             GENERIC_CAUTIONS.get(ctx.activity_type, ("Check conditions before you go.",))
         ),
-        confidence="low, nothing here is specific to you or to this site",
+        confidence="low | nothing here is specific to you or to this site",
     )
 
 
@@ -167,8 +167,8 @@ def memory_informed_plan(ctx: PlanningContext, result: RetrievalResult) -> Plan:
         )
         return plan
 
-    worked = [n for n in result.kept if n.metadata["rating"] >= GOOD_RATING]
-    failed = [n for n in result.kept if n.metadata["rating"] <= BAD_RATING]
+    worked = [n for n in result.kept if n.metadata.get("rating", 6) >= GOOD_RATING]
+    failed = [n for n in result.kept if n.metadata.get("rating", 6) <= BAD_RATING]
 
     sig_worked: set[str] = set().union(*(signals_for(n) for n in worked)) if worked else set()
     sig_failed: set[str] = set().union(*(signals_for(n) for n in failed)) if failed else set()
@@ -177,7 +177,7 @@ def memory_informed_plan(ctx: PlanningContext, result: RetrievalResult) -> Plan:
     bullets: list[str] = []
     cautions: list[str] = []
 
-    #, timing ---------------------------------------------------------
+    # -- timing ---------------------------------------------------------
     early_pays_off = "early" in sig_worked
     late_backfires = bool(sig_failed & {"midday", "crowded"})
 
@@ -189,13 +189,13 @@ def memory_informed_plan(ctx: PlanningContext, result: RetrievalResult) -> Plan:
             f"and treat {_fmt(plan_end)} as the soft end of the good part."
         )
         if early_pays_off:
-            good = sorted(worked, key=lambda n: -n.metadata["rating"])[0]
+            good = sorted(worked, key=lambda n: -n.metadata.get("rating", 6))[0]
             bullets.append(
-                f"Your best {ctx.season} outings here started at first light "
-                f"-- {_cite(good)} is the pattern to repeat."
+                f"Your best {ctx.season} outings here started at first light; "
+                f"{_cite(good)} is the pattern to repeat."
             )
         if late_backfires:
-            bad = sorted(failed, key=lambda n: n.metadata["rating"])[0]
+            bad = sorted(failed, key=lambda n: n.metadata.get("rating", 6))[0]
             bullets.append(
                 f"The failure mode is the late start, not the site: "
                 f"{_cite(bad)} was the same place in the same season."
@@ -210,7 +210,7 @@ def memory_informed_plan(ctx: PlanningContext, result: RetrievalResult) -> Plan:
         headline = f"{ctx.site} looks workable anywhere in the free window."
         bullets.append("Nothing in your history argues for a specific start time.")
 
-    #, conditions worth a warning --------------------------------------
+    # -- conditions worth a warning --------------------------------------
     if "crowded" in sig_failed or "crowded" in sig_worked:
         cautions.append(
             "Crowds are the recurring complaint at this site, the early "
@@ -228,10 +228,10 @@ def memory_informed_plan(ctx: PlanningContext, result: RetrievalResult) -> Plan:
     if "access" in (sig_worked | sig_failed):
         cautions.append("Confirm gate hours and transit times; access has bitten before.")
 
-    ratings = [n.metadata["rating"] for n in result.kept]
+    ratings = [n.metadata.get("rating", 6) for n in result.kept]
     same_site = [n for n in result.kept if n.metadata["site"] == ctx.site]
     confidence = (
-        f"{'high' if len(same_site) >= 2 else 'moderate'}, "
+        f"{'high' if len(same_site) >= 2 else 'moderate'} | "
         f"{len(result.kept)} matched entr{'y' if len(result.kept) == 1 else 'ies'}, "
         f"{len(same_site)} at this exact site, ratings {min(ratings)}-{max(ratings)}/10"
     )

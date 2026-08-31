@@ -1,5 +1,5 @@
 {
-  "_synthetic": "Static base travel-time matrix (minutes) from the APPROXIMATE home origin (a Brooklyn neighborhood centroid near Grand Army Plaza -- privacy: not a residential address). Authored for this capstone; a full GTFS routing engine is out of scope and this file sits behind the single swappable function in src/tools/travel_matrix.py. Lines use MTA route ids so live service alerts can match. borough_defaults cover dynamically fetched events, which carry no coordinates -- those lookups are flagged approximate.",
+  "_synthetic": "Static base travel-time matrix (minutes) from the APPROXIMATE home origin (a Brooklyn neighborhood centroid near Grand Army Plaza; for privacy, not a residential address). Authored for this capstone; a full GTFS routing engine is out of scope and this file sits behind the single swappable function in src/tools/travel_matrix.py. Lines use MTA route ids so live service alerts can match. borough_defaults cover dynamically fetched events, which carry no coordinates, so those lookups are flagged approximate.",
   "origin": {"label": "approximate home origin (Brooklyn centroid)", "lat": 40.67, "lng": -73.97},
   "destinations": {
     "jamaica-bay": {"minutes": 65, "lines": ["Q", "A"]},

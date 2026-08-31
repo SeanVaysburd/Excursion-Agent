@@ -53,7 +53,7 @@ class FreeWindow:
         return f"{self.start:%H:%M}-{self.end:%H:%M}"
 
 
-def _aware(value, day_end: bool = False) -> datetime:
+def _aware(value) -> datetime:
     """Normalize an icalendar DTSTART/DTEND value to tz-aware local time."""
     if isinstance(value, datetime):
         return value.astimezone(config.TZ) if value.tzinfo else value.replace(tzinfo=config.TZ)

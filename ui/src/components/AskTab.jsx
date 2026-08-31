@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { ask, watchRun } from "../api.js";
 import FlowView from "./FlowView.jsx";
 import PlanView from "./PlanView.jsx";
@@ -17,6 +17,19 @@ export default function AskTab() {
   const [busy, setBusy] = useState(false);
   const [liveRecords, setLiveRecords] = useState(null);
   const inputRef = useRef(null);
+  const endRef = useRef(null);
+  const abortRef = useRef(null);
+
+  useEffect(() => () => abortRef.current?.abort(), []);
+
+  // New thread entries (or live progress) scroll into view; the input gets
+  // focus back once the agent is done.
+  useEffect(() => {
+    endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+  }, [thread, liveRecords]);
+  useEffect(() => {
+    if (!busy) inputRef.current?.focus();
+  }, [busy]);
 
   const submit = async (text) => {
     const q = (text || message).trim();
@@ -39,7 +52,9 @@ export default function AskTab() {
           : `On it. Planning ${intent.date} live.`,
       }]);
       setLiveRecords([]);
-      const records = await watchRun(res.trace_id, setLiveRecords);
+      abortRef.current = new AbortController();
+      const records = await watchRun(res.trace_id, setLiveRecords,
+        { signal: abortRef.current.signal });
       const dayPlan = records.filter((r) => r.type === "day_plan").pop();
       const weekPlan = records.filter((r) => r.type === "weekly_plan").pop();
       const summary = records.filter((r) => r.type === "run_summary").pop();
@@ -57,6 +72,7 @@ export default function AskTab() {
         }]);
       }
     } catch (error) {
+      if (error.aborted) return;
       setThread((t) => [...t, { role: "agent", text: String(error.message || error) }]);
       setLiveRecords(null);
     }
@@ -73,9 +89,10 @@ export default function AskTab() {
             Where should your <span className="grad">free time</span> go?
           </h2>
           <p>
-            Ask about any day in the next two weeks. It reads your calendar,
-            checks real weather, birds, events and subway alerts, and
-            remembers how your past trips actually went.
+            Ask about any day in the next 16 days (the reach of a real
+            forecast). It reads your calendar, checks live weather, birds,
+            events and subway alerts, and remembers how your past trips
+            actually went.
           </p>
         </div>
       )}
@@ -84,19 +101,15 @@ export default function AskTab() {
         {thread.map((entry, i) => {
           if (entry.role === "you") {
             return (
-              <div key={i} style={{ alignSelf: "flex-end" }}>
-                <span className="chip accent" style={{ fontSize: 13, padding: "8px 14px" }}>
-                  {entry.text}
-                </span>
+              <div key={i} className="bubble you">
+                {entry.text}
               </div>
             );
           }
           if (entry.role === "agent") {
             return (
-              <div key={i} style={{ alignSelf: "flex-start", maxWidth: 560 }}>
-                <span className="chip" style={{ fontSize: 13, padding: "8px 14px", whiteSpace: "normal" }}>
-                  {entry.text}
-                </span>
+              <div key={i} className="bubble agent">
+                {entry.text}
               </div>
             );
           }
@@ -106,22 +119,19 @@ export default function AskTab() {
           return <WeekView key={i} plan={entry.plan} />;
         })}
         {liveRecords && <FlowView records={liveRecords} live />}
+        <div ref={endRef} />
       </div>
 
-      <div style={{ position: "sticky", bottom: 16, marginTop: 22 }}>
+      <div className="askbar">
         <div style={{ display: "flex", gap: 8 }}>
           <input
             ref={inputRef}
+            className="askinput"
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && submit()}
             placeholder={busy ? "planning..." : "Ask about a day or your week"}
             disabled={busy}
-            style={{
-              flex: 1, padding: "13px 16px", borderRadius: 14, fontSize: 14,
-              border: "1px solid var(--line-2)", background: "var(--bg-raised)",
-              color: "var(--text)", boxShadow: "var(--shadow-1)", outline: "none",
-            }}
           />
           <button className="btn primary" disabled={busy} onClick={() => submit()}>
             {busy ? "…" : "Plan it"}

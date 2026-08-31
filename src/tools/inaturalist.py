@@ -12,7 +12,10 @@ from src.tools.base import RunContext, ToolResult, fetch
 URL = "https://api.inaturalist.org/v2/observations"
 
 
-async def fetch_recent(ctx: RunContext, lat: float, lon: float, region_id: str) -> ToolResult:
+async def fetch_recent(
+    ctx: RunContext, lat: float, lon: float, region_id: str,
+    radius_km: float | None = None,
+) -> ToolResult:
     result = await fetch(
         ctx,
         "inaturalist",
@@ -21,7 +24,7 @@ async def fetch_recent(ctx: RunContext, lat: float, lon: float, region_id: str) 
             "taxon_id": 3,  # Aves
             "lat": round(lat, 4),
             "lng": round(lon, 4),
-            "radius": config.INAT_RADIUS_KM,
+            "radius": radius_km or config.INAT_RADIUS_KM,
             "verifiable": "true",
             "order_by": "observed_on",
             "per_page": config.INAT_PER_PAGE,

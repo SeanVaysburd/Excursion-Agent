@@ -1,23 +1,5 @@
 // Small presentation helpers. Display-only: trace data is never mutated.
 
-export const CATEGORY_ICONS = {
-  nature: "🦆",
-  birding: "🦆",
-  hike: "🥾",
-  kayaking: "🛶",
-  outdoor_event: "🎪",
-  indoor: "🏛️",
-  museum: "🏛️",
-};
-
-export function iconFor(candidate) {
-  const key = candidate?.domain || "";
-  const id = candidate?.base?.candidate_id || "";
-  if (id.startsWith("venue@")) return CATEGORY_ICONS.museum;
-  if (id.startsWith("event@")) return CATEGORY_ICONS.outdoor_event;
-  return CATEGORY_ICONS[key] || "📍";
-}
-
 export function titleCase(text) {
   if (!text) return text;
   // Only fix shouting ALL-CAPS source names; leave mixed case alone.
@@ -25,6 +7,13 @@ export function titleCase(text) {
   return text
     .toLowerCase()
     .replace(/\b([a-z])/g, (m, c) => c.toUpperCase());
+}
+
+// Render numbers defensively: a missing or malformed field shows "-",
+// never "NaN".
+export function num(value, digits = 1, fallback = "-") {
+  const n = Number(value);
+  return Number.isFinite(n) ? n.toFixed(digits) : fallback;
 }
 
 export function relTime(iso) {
@@ -39,17 +28,38 @@ export function relTime(iso) {
 }
 
 export function hmToFrac(hm, dayStart = 6, dayEnd = 22) {
-  const [h, m] = hm.split(":").map(Number);
-  const t = h + m / 60;
+  const [h, m] = String(hm || "").split(":").map(Number);
+  if (!Number.isFinite(h)) return 0;
+  const t = h + (m || 0) / 60;
   return Math.min(1, Math.max(0, (t - dayStart) / (dayEnd - dayStart)));
 }
 
 export const DOW = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
+export const FEEDBACK_TYPES = [
+  "birding", "hike", "kayaking", "outdoor_event", "museum", "other",
+];
+
+// Best-guess activity type for a scored candidate (the feedback modal
+// prefills this; the user can change it).
+export function guessType(candidate) {
+  const id = candidate?.base?.candidate_id || candidate?.candidate_id || "";
+  if (id.startsWith("venue@")) return "museum";
+  if (id.startsWith("event@")) return "outdoor_event";
+  const name = `${candidate?.base?.name || ""} ${candidate?.base?.site || ""}`.toLowerCase();
+  if (/kayak|canoe|paddle/.test(name)) return "kayaking";
+  if (/trail|park|hike|palisades|harriman/.test(name) && candidate?.domain === "nature") return "hike";
+  if (candidate?.domain === "nature") return "birding";
+  if (candidate?.domain === "outdoor_event") return "outdoor_event";
+  return "other";
+}
+
 export function themeInit() {
   let saved = null;
   try { saved = localStorage.getItem("ea-theme"); } catch { /* private mode */ }
-  const theme = saved || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+  const theme = saved
+    || document.documentElement.dataset.theme
+    || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
   document.documentElement.dataset.theme = theme;
   return theme;
 }

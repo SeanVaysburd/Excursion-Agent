@@ -1,10 +1,12 @@
-"""Deterministic synthetic-week generator for data/calendar.ics.
+"""Deterministic synthetic-calendar generator for data/calendar.ics.
 
 The committed sample must stay inside the live forecast horizon (~16
-days), so demo.py regenerates the SAME structure onto the current week
-when the file goes stale, always with a printed notice. Structure
-(labeled synthetic; RRULE deliberately unused, the parser doesn't
-expand it):
+days), so demo.py regenerates it (five weeks by default, via
+build_weeks) onto the coming weeks when the file goes stale, always
+with a printed notice. Week 0 is the standard sample week below; weeks
+1-3 vary the availability (build_weeks docstring) so different Ask-tab
+questions hit genuinely different free windows. RRULE is deliberately
+unused, the parser doesn't expand it. The standard week:
 
   Mon-Fri  09:00-17:30  Work (hard)
   Tue      18:00-20:00  Evening class (hard)
@@ -14,7 +16,7 @@ expand it):
   Sun      18:00-21:00  Dinner at parents' (hard)
 
 Usage:
-  python -m scripts.make_sample_calendar [--week-start YYYY-MM-DD] [--out PATH]
+  python -m scripts.make_sample_calendar [--week-start YYYY-MM-DD] [--out PATH] [--weeks N]
   python -m scripts.make_sample_calendar --fully-blocked  (escalation fixture)
 """
 
@@ -144,10 +146,12 @@ def main() -> None:
         out = (args.out if args.out != config.DATA_DIR / "calendar.ics"
                else config.DATA_DIR / "calendar_fullyblocked.ics")
         write(build_fully_blocked(week_start), out)
+        print(f"wrote the fully-blocked escalation fixture for the week of "
+              f"{week_start} -> {out}")
     else:
-        out = args.out
-        write(build_weeks(week_start, args.weeks), out)
-    print(f"wrote {args.weeks} synthetic week(s) starting {week_start} -> {out}")
+        write(build_weeks(week_start, args.weeks), args.out)
+        print(f"wrote {args.weeks} synthetic week(s) starting {week_start} "
+              f"-> {args.out}")
 
 
 if __name__ == "__main__":

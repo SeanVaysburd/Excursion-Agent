@@ -29,7 +29,7 @@ def _key() -> str | None:
     return os.environ.get("EBIRD_API_KEY") or None
 
 
-def _keyless(ctx: RunContext, source: str) -> ToolResult:
+def _keyless(source: str) -> ToolResult:
     from datetime import datetime
 
     return ToolResult(
@@ -46,7 +46,7 @@ async def _fetch_obs(
 ) -> ToolResult:
     key = _key()
     if key is None:
-        return _keyless(ctx, "ebird")
+        return _keyless("ebird")
     result = await fetch(
         ctx,
         "ebird",

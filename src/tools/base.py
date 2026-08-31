@@ -35,7 +35,7 @@ from typing import Any, Callable, Literal
 from urllib.parse import urlparse
 
 import httpx
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from src import config
 
@@ -112,7 +112,7 @@ class RunContext:
         self._last_call: dict[str, float] = {}
         self._client: httpx.AsyncClient | None = None
 
-    #, lifecycle ---------------------------------------------------------
+    # -- lifecycle ---------------------------------------------------------
     @property
     def client(self) -> httpx.AsyncClient:
         if self._client is None or self._client.is_closed:
@@ -127,7 +127,7 @@ class RunContext:
         if self._client is not None and not self._client.is_closed:
             await self._client.aclose()
 
-    #, accounting --------------------------------------------------------
+    # -- accounting --------------------------------------------------------
     def total_external_calls(self) -> int:
         return sum(self.calls.values())
 

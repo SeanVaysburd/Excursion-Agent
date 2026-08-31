@@ -66,13 +66,19 @@ and the first plan downloads about 90 MB of embedding weights into
   optional (or carrying `X-SOFT:true`) stay plannable but cost a visible
   score penalty. Recurring events (RRULE) aren't expanded, so prefer a
   flattened export. Live Google Calendar sync is future work. Without
-  your own file, the committed synthetic sample week is used, auto-shifted
-  onto the current week with a printed notice.
-- **Your feedback.** After a trip, add an entry to
-  `data/excursions.json` (same fields as the samples). The next run
-  reindexes automatically. We verified this end to end: one added
-  kayaking note turned that activity from a cold start into a
-  0.75-similarity retrieval.
+  your own file, the committed synthetic sample calendar is used: five
+  weeks of realistic blocks, regenerated onto the coming weeks with a
+  printed notice whenever it goes stale.
+- **Your feedback.** The UI is the front door: every suggestion card has
+  **Pass** (with a quick why) and, after you take a trip, **Log this
+  trip** with a 1-10 rating and a note. The Day tab's **Log an outing**
+  covers trips the agent never suggested, and the accept dialog offers an
+  optional note after a calendar write. All of it appends to
+  `data/excursions.json` behind an explicit save, and the same server
+  process retrieves it from the next run on. Editing the file by hand
+  still works too (same fields as the samples; the next run reindexes).
+  Verified end to end: one added kayaking note turned that activity from
+  a cold start into a 0.75-similarity retrieval.
 
 ### The UI
 
@@ -81,15 +87,26 @@ uvicorn src.api.app:app --host 127.0.0.1 --port 8000     # backend
 cd ui && npm ci && npm run dev                            # http://localhost:5173
 ```
 
-Three tabs. **Day Plan** shows the top 3 cards per free window: score
-breakdown, confidence badge, evidence chips, lifer badge, weather-gate
-flags, and an Approve button behind a confirm dialog. **Week Plan** shows
-the winning weekly set, two collapsed alternates, the critic's penalties
-as chips, and the naive-vs-ToT comparison. **Run Trace** renders any run's
-full audit log as an expandable timeline. Day and Week load the latest
-completed run instantly; the Refresh button starts a live run (the weekly
-one takes minutes, and the UI says so). Node is only needed for the UI.
-`pytest` runs the offline test suite with no network and no keys.
+Four tabs. **Ask** is the front door: type "what should I do saturday
+morning?" and an intent guardrail (deterministic parsing first, one
+validated LLM call only for fuzzy text) picks the day, refuses anything
+outside the 16-day forecast horizon, and asks back when the request is
+ambiguous; the run then streams live as an orchestration diagram whose
+nodes light up only when trace records prove them. **Day plan** shows the
+top 3 cards per free window: score breakdown, confidence badge, evidence
+chips, lifer badge, weather-gate flags, Add to calendar behind a confirm,
+plus Pass and Log this trip feeding the memory. A run picker pins any
+committed clean run; test fixtures (simulated failures, the escalation
+calendar) stay out of this surface and live labeled in Runs. **Week
+plan** shows the winning set, two collapsed alternates, the critic's
+penalties, the naive-vs-ToT comparison, and **Add week to calendar**: one
+confirm writes every pick. **Runs** renders any trace as the flow diagram
+plus an expandable timeline, including each agent's complete structured
+output (`agent_report` records). Day and Week load the latest completed
+run instantly; Run live starts a fresh one on a server task (one at a
+time; a second request gets a clear 409) and the UI polls the growing
+trace. Light and dark theme. Node is only needed for the UI. `pytest`
+runs the offline test suite with no network and no keys.
 
 ### Don't want to run it?
 
@@ -142,13 +159,24 @@ cutoff.
 | S1 | a daily plan from live weather plus memory | the full waterfall; cites the retrieved "midday crowds, rated 4/10" memory at Jamaica Bay |
 | S2 | weekly naive vs ToT | rank-by-sum picks repetition; the critic's variety penalty flips it |
 | S3 | cold start | kayaking has no logged history, so it's planned from live evidence only, confidence low, and it says so |
-| S4 | lifer bonus | species seen nearby but missing from the life list, named in the reason; `--life-list data/life_list_full.csv` is the zero-lifers control |
+| S4 | lifer bonus | species seen nearby but missing from the life list, named in the reason; `--life-list data/life_list_full.csv` is the fuller-life-list control (live data can still surface a lifer or two even against the fuller list, and the eval reports whatever actually happened) |
 | S5 | the approval gate | the only write tool appends a calendar event to a local working copy after an explicit confirm, and shows the diff |
 
-`--force-error <source>` runs a labeled degradation demo. Every line of
-that trace is stamped `injected_failure`, so a simulated outage can never
-pass for a real one. `python -m scripts.evaluate` reruns the whole suite
-and regenerates `eval/results.md`.
+Other flags: `--date YYYY-MM-DD` plans a specific day (rejected outside
+the 16-day forecast horizon), `--approve prompt|auto|deny` controls the
+S5 write gate (deny under `--scenario all` so unattended runs never
+block), `--trace-tag` names the trace file, `--rebuild-memory` forces a
+re-embed. `--force-error <source>` runs a labeled degradation demo: every
+line of that trace is stamped `injected_failure`, so a simulated outage
+can never pass for a real one (those fixture traces are also kept off the
+UI's demo surface, visible only in the Runs tab). `python -m
+scripts.evaluate` reruns the whole suite and regenerates
+`eval/results.md`; `--skip-runs` recomputes the report from existing
+traces. Beyond the headline metrics, the report includes a per-domain
+rubric-consistency table (the three agents share one 1-10 rubric; the
+table shows no domain drifts stricter or looser) and acceptance-rate and
+calibration sections computed from whatever accept/pass decisions you
+have recorded, with the honest n stated.
 
 ## Design decisions, and why
 
@@ -181,6 +209,14 @@ and regenerates `eval/results.md`.
   penalty, transit) is a code-side adjustment with a label, and the final
   score is clamped. The UI chips and the trace show exactly who added
   what.
+- **One rubric, three specialists.** The parallel domain agents could
+  quietly drift into different strictness and let one domain always win.
+  The guard is a single shared 1-10 anchor block injected verbatim into
+  all three prompts ([`src/agents/rubric.py`](src/agents/rubric.py));
+  only the few-shot examples that translate "a 9" into each domain's
+  terms differ, and every post-score adjustment is code-side and
+  identical. `eval/results.md` carries the per-domain score table that
+  shows the scale holding.
 - **Groundedness is enforced twice.** Each call's schema types the
   evidence ids as a literal enum of what was actually fetched this run
   (the local model's grammar decoder physically can't cite anything
@@ -195,9 +231,11 @@ and regenerates `eval/results.md`.
 
 ## Synthetic data statement (course requirement)
 
-Everything under [`data/`](data/) is synthetic and labeled in the files
-themselves: the sample calendar week (auto-shifted onto the current week
-when stale, with a printed notice), the fully-blocked escalation fixture,
+Everything under [`data/`](data/) is synthetic and labeled where the
+format allows a label (an .ics or CSV cannot carry one, so this section
+is their label): the five-week sample calendar (regenerated onto the
+coming weeks when stale, with a printed notice), the fully-blocked
+escalation fixture,
 the venue catalog with simplified hours, the travel-time matrix, the
 outdoor-site catalog (`sites.json`, an addition to the original data-file
 list, needed for coordinates, regions and tides), and the life list. The
@@ -205,7 +243,9 @@ life list is seeded from real regional observations but intentionally
 incomplete: about 150 of the species currently being seen, always missing
 the two demo shorebirds, so the lifer path demonstrates on live data.
 `data/excursions.json` is the synthetic 20-entry feedback corpus the
-memory layer was calibrated on in Week 3.
+memory layer was calibrated on in Week 3; entries you add through the
+feedback UI are appended there tagged `"source": "user"`, so your real
+feedback and the seeded corpus stay distinguishable.
 
 **Privacy:** the "home" origin used everywhere in this repo is an
 approximate Brooklyn neighborhood centroid, not a residential address,
@@ -220,10 +260,12 @@ and the committed travel matrix is anchored to it.
 - Memory matching is the Week-3 design: exact season and type match with
   a measured 0.55 cosine cutoff. The calibration bands and the margin
   live in `docs/week3/`.
-- Feedback added by editing `data/excursions.json` is picked up on the
-  next run. A long-running API server needs a restart after a corpus
-  edit (the vector store's client is cached per process); `python
-  demo.py` runs always see the latest.
+- Feedback saved through the UI is retrievable from the next run in the
+  same server process (the rebuild goes through the vector store's own
+  client). Hand-editing `data/excursions.json` while a server is already
+  running is the one case that still needs a restart, because nothing
+  tells the server the file changed; `python demo.py` runs always see
+  the latest.
 - The S1 rain branch depends on the real forecast, on purpose. The
   committed rainy trace names its real date. Run it on a sunny day and
   you get the sunny plan. That's the system working, not a bug. Same
@@ -249,43 +291,62 @@ the beam-search bound in eval.
 ## Safety layer
 
 If there are no usable free windows, the run stops and asks instead of
-guessing. Groundedness and hard-constraint validators gate final outputs
-(the violations metric targets zero). The one write tool (calendar) only
-runs after an explicit confirm, and writes to a gitignored working copy,
-never the committed sample. Agent self-reports get scanned for narrated
-trouble ("assumed", "no data" and friends), which costs confidence; the
-threat model there is honest self-described failure, not adversarial
-agents, because the agents are ours. Secrets are redacted at every exit
-(logging, stdout, stderr, exception hook) and `.env` has been gitignored
-since the first commit. Every run writes a full trajectory to
-[`runs/`](runs/). The audit trail, the eval's only data source, and the
-Run Trace tab all read the same file.
+guessing. When a data source is down, the run does not stop: it proceeds
+on fallbacks with confidence lowered and the failure stated, and the plan
+carries a `degraded_sources` list the UI renders as a notice, which is
+the ask-the-human moment for outages without blocking every run on one
+flaky feed. Groundedness and hard-constraint validators gate final
+outputs (the violations metric targets zero). There are exactly two
+write paths, both behind an explicit confirm: the calendar tool (writes
+a gitignored working copy, never the committed sample) and the feedback
+endpoint (appends to the corpus). Every agent's complete structured
+output lands in the trace as an `agent_report` record, so a reviewer can
+audit what each agent said before any post-processing touched it; the
+honest limit is that the model API exposes outputs, not chain-of-thought,
+and the guardrails act on exactly what is logged. Agent self-reports get
+scanned by the keyword and negative-lexicon check (the regex plus
+sentiment guard from the safety plan) for narrated trouble ("assumed",
+"no data" and friends), which costs confidence; the threat model there is
+honest self-described failure, not adversarial agents, because the agents
+are ours. Secrets are redacted at every exit (logging, stdout, stderr,
+exception hook) and `.env` has been gitignored since the first commit.
+Every run writes a full trajectory to [`runs/`](runs/). The audit trail,
+the eval's only data source, and the Runs tab all read the same file.
 
 ## Tests
 
-`pytest`, all offline, no keys, no network: politeness wrapper semantics,
-Week-3 regression (byte-exact against the committed checkpoint output),
+`pytest`, all offline, no keys, no network (after the one-time embedding
+model download on first setup): politeness wrapper semantics, Week-3
+regression (byte-exact against the committed checkpoint output),
 re-ranker and calibration bands, groundedness including the honest
 denominator, lifer code-matching, the weather gate over synthetic
 payloads, ICS hard/soft parsing, hard constraints, beam isolation (frozen
-nodes, sibling independence, the variety-penalty flip), and parser
-fallback (garbage model output becomes a stated low-confidence default,
-never a crash). Fixtures in unit tests are normal engineering; the
-no-replay honesty rule applies to the agent runtime.
+nodes, sibling independence, the variety-penalty flip), parser fallback
+(garbage model output becomes a stated low-confidence default, never a
+crash), the Ask-surface intent guardrails, and the feedback path
+(validation, atomic append in the committed file style, and the
+same-process reindex that makes a new entry retrievable without a
+restart). Fixtures in unit tests are normal engineering; the no-replay
+honesty rule applies to the agent runtime.
 
 ## Provenance and honesty (course requirement)
 
 Committed sample traces are real runs. Each trace's run summary names its
-provider: the headline samples come from `claude-sdk`, plus one labeled
-`ollama` trace as proof of the free path. Simulated failures are stamped
-on every line. The Week-3 demo in `docs/week3/` replays its committed LLM
-outputs (it says so in its own output), which is different from the live
-agent runs here. `eval/results.md` cites the exact trace file behind
-every number.
+provider: the headline samples come from `claude-sdk`, plus labeled
+`ollama` traces for S1, S3, S4 and S5 as proof of the free path (the
+weekly S2 on the local model is a long CPU burn and is run separately).
+Simulated failures are stamped on every line. The Week-3 demo in
+`docs/week3/` replays its committed LLM outputs (it says so in its own
+output), which is different from the live agent runs here.
+`eval/results.md` cites the exact trace file behind every number.
 
 ## Future work
 
 Google Calendar / CalDAV sync (today: bring an .ics), a real routing API
-behind the travel-matrix seam, per-site weather, RRULE expansion, and an
-in-UI "rate this excursion" flow that appends to the corpus. Today you do
-that by editing `data/excursions.json`, and the next run picks it up.
+behind the travel-matrix seam, per-site weather, an air-quality gate
+(Open-Meteo's AQI endpoint drops into the same polite wrapper; today the
+gate covers rain, temperature and wind), and RRULE expansion.
+
+## License
+
+MIT, see [LICENSE](LICENSE).

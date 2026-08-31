@@ -3,13 +3,26 @@ import { getRuns } from "./api.js";
 import { relTime, themeInit, themeSet } from "./helpers.js";
 import AskTab from "./components/AskTab.jsx";
 import DayPlan from "./components/DayPlan.jsx";
+import { MapIcon, MoonIcon, SunIcon } from "./components/Icons.jsx";
 import RunTrace from "./components/RunTrace.jsx";
 import WeekPlan from "./components/WeekPlan.jsx";
 
 const TABS = ["Ask", "Day plan", "Week plan", "Runs"];
+const TAB_SLUGS = ["ask", "day", "week", "runs"];
+
+function initialTab() {
+  // ?tab=day etc. deep-links straight to a tab (handy for demos).
+  try {
+    const slug = new URLSearchParams(location.search).get("tab");
+    const index = TAB_SLUGS.indexOf(slug || "");
+    return index === -1 ? 0 : index;
+  } catch {
+    return 0;
+  }
+}
 
 export default function App() {
-  const [tab, setTab] = useState(0);
+  const [tab, setTab] = useState(initialTab);
   const [theme, setTheme] = useState(themeInit);
   const [status, setStatus] = useState(null);
 
@@ -31,7 +44,7 @@ export default function App() {
       <header className="chrome">
         <div className="chrome-inner">
           <div className="brand">
-            <div className="brand-mark">🗺️</div>
+            <div className="brand-mark"><MapIcon size={18} /></div>
             <div>
               <h1>Excursion Agent</h1>
               <small>plan the free hours</small>
@@ -48,8 +61,9 @@ export default function App() {
           </nav>
           <div className="chrome-right">
             <button className="theme-btn" onClick={flip}
+              aria-label={theme === "dark" ? "switch to light mode" : "switch to dark mode"}
               title={theme === "dark" ? "switch to light" : "switch to dark"}>
-              {theme === "dark" ? "☀️" : "🌙"}
+              {theme === "dark" ? <SunIcon size={16} /> : <MoonIcon size={16} />}
             </button>
           </div>
         </div>
@@ -62,8 +76,7 @@ export default function App() {
       </main>
       <footer className="statusbar">
         <div className="statusbar-inner">
-          <span>synthetic demo data, labeled as such</span>
-          <span>audit logs in <b>runs/</b></span>
+          <span>run logs in <b>runs/</b></span>
           {status?.latest && (
             <span>latest run: <b>{status.latest.scenario}</b> {relTime(status.latest.mtime)}</span>
           )}

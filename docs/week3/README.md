@@ -9,10 +9,13 @@ API calls. They are not retrieval and are not in scope here.
 
 ## Run it
 
+This checkpoint now lives inside the full capstone repo; run its scripts as
+modules from the repo root (path-invoked scripts cannot see `src.*`):
+
 ```bash
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-python demo.py --rebuild
+python -m scripts.week3.memory_demo --rebuild
 ```
 
 All local. No API keys. The first run downloads the all-MiniLM-L6-v2 weights
@@ -21,23 +24,24 @@ All local. No API keys. The first run downloads the all-MiniLM-L6-v2 weights
 Other flags:
 
 ```bash
-python demo.py --emit-prompts   # write the planner prompts to prompts/
-python demo.py --llm            # also show the saved Claude completions
-python calibrate.py             # re-derive the similarity cutoff
+python -m scripts.week3.memory_demo --emit-prompts   # write prompts to docs/week3/prompts/
+python -m scripts.week3.memory_demo --llm            # also show the saved Claude completions
+python -m scripts.week3.calibrate                    # re-derive the similarity cutoff
 ```
 
-## Files
+## Files (migrated layout)
 
 | file | what it is |
 | --- | --- |
-| `data/excursions.json` | 20 synthetic excursion entries |
-| `memory.py` | the retrieval layer, documents, index, re-ranking, cutoff |
-| `recommend.py` | rule-based planner stand-in, with and without memory |
-| `planner_prompt.py` | the prompts a real planner LLM would receive |
-| `demo.py` | the three scenarios and their traces |
-| `calibrate.py` | evidence for the similarity cutoff; run when data changes |
-| `prompts/` | emitted planner prompts, one per scenario per condition |
-| `llm_output/` | Claude's answers to those prompts (see *Provenance*) |
+| `data/excursions.json` | the 20 synthetic entries (repo root; the live agent shares this corpus, and feedback saved through the app appends to it tagged `"source": "user"`) |
+| `src/memory/retrieval.py` | the retrieval layer, documents, index, re-ranking, cutoff (imported by the live agent AND these scripts) |
+| `scripts/week3/recommend.py` | rule-based planner stand-in, with and without memory |
+| `scripts/week3/planner_prompt.py` | the prompts a real planner LLM would receive |
+| `scripts/week3/memory_demo.py` | the three scenarios and their traces |
+| `scripts/week3/calibrate.py` | evidence for the similarity cutoff; run when data changes |
+| `docs/week3/prompts/` | emitted planner prompts, one per scenario per condition |
+| `docs/week3/llm_output/` | Claude's answers to those prompts (see *Provenance*) |
+| `docs/week3/expected_demo_output.txt` | the committed demo output; `tests/test_week3_regression.py` diffs the deterministic blocks against it |
 
 ## Pipeline
 
@@ -144,10 +148,10 @@ intact. Worth deciding deliberately rather than inheriting.
 
 ## What the demo shows
 
-**Scenario 1**, mid-May Saturday, free 06:00–14:00, birding at Jamaica Bay.
+**Scenario 1**, mid-May Saturday, free 06:00-14:00, birding at Jamaica Bay.
 Seven candidates, three dropped by the cutoff, four re-ranked. Re-ranking
 changes the order from `e02 > e01 > e19 > e07` to `e19 > e02 > e07 > e01`.
-The recommendation moves from a generic 08:00–12:00 to **06:00–09:30**.
+The recommendation moves from a generic 08:00-12:00 to **06:00-09:30**.
 
 **Scenarios 2 and 3**, kayaking, and a Catskills overnight backpacking trip.
 Both cold-start, and now by the *same* mechanism: every candidate falls below
@@ -163,7 +167,7 @@ filter-based design these two were caught by different guards.)
 Run `python demo.py --llm` and compare `s1_a` (no memory) with `s1_b` (memory).
 
 **The LLM baseline already says "go early."** With no memory at all, Claude
-recommends 06:00–10:00 for spring birding, because "passerine activity peaks
+recommends 06:00-10:00 for spring birding, because "passerine activity peaks
 in the first hours after sunrise" is general ornithological knowledge. It does
 not need your notes to work that out.
 

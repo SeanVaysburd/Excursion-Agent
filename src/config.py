@@ -104,13 +104,13 @@ SIMILARITY_CUTOFF = 0.55
 # --------------------------------------------------------------------------
 # Weekly Tree-of-Thought
 # --------------------------------------------------------------------------
-BEAM_WIDTH = 4
+BEAM_WIDTH = 4  # weekly beam: sets kept alive at each depth (frozen spec)
 BEAM_DEPTH = 7  # Monday..Sunday; days without windows are skipped
 PRUNE_MARGIN = 3.0  # drop sets more than this below the depth leader.
 #   Spec-frozen ABSOLUTE margin: note it bites hardest at depth 1, where
 #   running totals are smallest, documented behavior, not a bug.
 WALKING_WEEK_MILES = 40.0  # critic penalizes weekly walking above this
-TRANSIT_FATIGUE_WEEK_MIN = 420  # critic penalizes weekly transit above this
+TRANSIT_FATIGUE_WEEK_MIN = 420  # minutes/week; critic penalizes total transit above this
 SEED = 20260831  # tie-breaks only; per-run random.Random(SEED)
 
 # --------------------------------------------------------------------------
@@ -145,7 +145,7 @@ CALL_BUDGET = {
     # full 5-scenario demo under one invocation-scoped cache
     "full_demo": 45,
 }
-CALL_CEILING = 90
+CALL_CEILING = CALL_BUDGET["full_demo"] + 10  # derived: headroom over the budgeted worst case
 
 # Hostname allowlist: documented public API GETs + Anthropic POST + loopback
 # Ollama. The shared wrapper raises on anything else.
@@ -199,13 +199,11 @@ LLM_SEMAPHORE = {"claude-sdk": 2, "ollama": 1}
 LLM_TIMEOUT_S = {"claude-sdk": 180, "ollama": 300}
 LLM_MAX_TOKENS = 4096  # explicit output cap for every provider
 OLLAMA_NUM_CTX = 16384  # default 2048 silently truncates evidence packs
-OLLAMA_NUM_PREDICT = 2048
+OLLAMA_NUM_PREDICT = 2048  # max output tokens; structured reports fit well under this
 
 # --------------------------------------------------------------------------
 # Server
 # --------------------------------------------------------------------------
-API_HOST = "127.0.0.1"
-API_PORT = 8000
 UI_ORIGIN = "http://localhost:5173"
 
 # --------------------------------------------------------------------------

@@ -23,7 +23,9 @@ Mechanics (frozen spec + plan pre-decisions):
 from __future__ import annotations
 
 import asyncio
+import json
 import random
+from functools import lru_cache
 from dataclasses import dataclass, field, replace
 from datetime import date, timedelta
 from pathlib import Path
@@ -308,19 +310,24 @@ async def run_weekly(
     return plan, day_plans
 
 
-def _candidate_walk(candidate: ScoredCandidate) -> float:
-    for adjustment in candidate.adjustments:
-        pass
-    # site/venue walk_miles are looked up by the waterfall's catalogs; the
-    # candidate carries its site name, fall back to a flat 2.0 for events.
-    import json as _json
-
+@lru_cache(maxsize=1)
+def _walk_catalog() -> dict[str, float]:
+    """id -> walk_miles for every site and venue, loaded once. The beam
+    calls this for every expansion, so disk reads here would block the
+    event loop hundreds of times per weekly run."""
+    catalog: dict[str, float] = {}
     for path, key in ((config.DATA_DIR / "sites.json", "sites"),
                       (config.DATA_DIR / "venues.json", "venues")):
-        for entry in _json.loads(path.read_text())[key]:
-            if entry["name"] == candidate.base.site or f"@{entry['id']}" in candidate.candidate_id:
-                return float(entry.get("walk_miles", 2.0))
-    return 2.0
+        for entry in json.loads(path.read_text())[key]:
+            catalog[entry["id"]] = float(entry.get("walk_miles", 2.0))
+            catalog[entry["name"]] = float(entry.get("walk_miles", 2.0))
+    return catalog
+
+
+def _candidate_walk(candidate: ScoredCandidate) -> float:
+    catalog = _walk_catalog()
+    dest = candidate.candidate_id.split("@", 1)[-1]
+    return catalog.get(dest) or catalog.get(candidate.base.site, 2.0)
 
 
 def _picked_lines(node: BeamNode, day_candidates) -> list[tuple[date, str]]:
@@ -350,6 +357,7 @@ def _to_set(rank: int, node: BeamNode, day_candidates, day_walk) -> WeeklySet:
             "date": day.isoformat(), "candidate_id": chosen.candidate_id,
             "name": chosen.base.name,
             "category": chosen.domain,
+            "window": chosen.base.window,
             "final_score": chosen.final_score,
             "walk_miles": day_walk.get(f"{day.isoformat()}|{chosen.candidate_id}", 2.0),
             "transit_min": 2 * chosen.trip.minutes if chosen.trip else 0,

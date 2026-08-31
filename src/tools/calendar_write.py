@@ -54,8 +54,11 @@ def append_event(
     calendar.add_component(event)
 
     tmp = path.with_suffix(".ics.tmp")
-    tmp.write_bytes(calendar.to_ical())
-    os.replace(tmp, path)  # atomic
+    try:
+        tmp.write_bytes(calendar.to_ical())
+        os.replace(tmp, path)  # atomic
+    finally:
+        tmp.unlink(missing_ok=True)
 
     return {
         "written_to": str(path),

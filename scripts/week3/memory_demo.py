@@ -9,8 +9,8 @@ Prints four blocks, in order:
     BLOCK 4  cold start          , a request nothing in the log covers
 
 Usage:
-    python demo.py
-    python demo.py --rebuild                 # re-embed from data/excursions.json
+    python -m scripts.week3.memory_demo
+    python -m scripts.week3.memory_demo --rebuild                 # re-embed from data/excursions.json
     python demo.py --llm                     # include the saved Claude answers
     python demo.py --emit-prompts            # write prompts/ for inspection
     python demo.py --cold-start backpacking  # use the other cold-start case
@@ -21,6 +21,7 @@ Plain text only, no colour, no emoji, wrapped to 78 columns.
 from __future__ import annotations
 
 import argparse
+import re
 import textwrap
 from pathlib import Path
 
@@ -65,6 +66,12 @@ def wrap(text: str, indent: str = "  ", hang: str | None = None) -> str:
         initial_indent=indent,
         subsequent_indent=hang if hang is not None else indent,
     )
+
+
+def conf_level(confidence: str) -> str:
+    """Leading confidence word only. Tolerates every delimiter in play: the
+    current " | " contract, the frozen replay files' " -- ", and a comma."""
+    return re.split(r"\s*(?:\||--|,)\s*", confidence, maxsplit=1)[0]
 
 
 def kv(label: str, value: str, indent: int = 4, label_w: int = 16) -> str:
@@ -124,7 +131,7 @@ def print_candidates(result) -> None:
         md = c.metadata
         print(
             f"    {i:<3}{c.entry_id:<7}{truncate(md['site'], 28):<29}"
-            f"{md['date']:<12}{str(md['rating']) + '/10':>7}{c.similarity:>12.3f}"
+            f"{md['date']:<12}{str(md.get('rating', '-')) + '/10':>7}{c.similarity:>12.3f}"
         )
         print(wrap(excerpt(c.get_content()), indent="        "))
 
@@ -174,7 +181,7 @@ def print_selection(result) -> None:
         md = c.metadata
         print(
             f"    {i}. {c.entry_id}   composite {c.composite:.3f}   "
-            f"semantic {c.similarity:.3f}   rated {md['rating']}/10"
+            f"semantic {c.similarity:.3f}   rated {md.get('rating', '-')}/10"
         )
         print(f"       {md['site']}  |  {md['date']}  |  {md['season']}  |  {md['type']}")
         print(wrap(excerpt(c.get_content()), indent="       "))
@@ -268,8 +275,8 @@ def print_comparison(
     print(f"      {'-' * 62}")
     print(f"      {'time window':<16}{before.window:<24}{after.window}")
     print(
-        f"      {'confidence':<16}{before.confidence.split(', ')[0]:<24}"
-        f"{after.confidence.split(', ')[0]}"
+        f"      {'confidence':<16}{conf_level(before.confidence):<24}"
+        f"{conf_level(after.confidence)}"
     )
     print(f"      {'basis':<16}{'generic defaults':<24}{evidence}")
     print()
@@ -345,7 +352,7 @@ def print_cold_start(
     print()
     print(wrap(
         f"Confidence is reported as "
-        f"'{after.confidence.split(', ')[0]}', and the basis line states the "
+        f"'{conf_level(after.confidence)}', and the basis line states the "
         f"cold start outright: {after.basis}",
         indent="    ",
     ))
@@ -448,7 +455,7 @@ def main() -> None:
     ))
     print(kv("similarity cutoff", f"{SIMILARITY_CUTOFF:.3f}", indent=2, label_w=18))
 
-    #, blocks 1 to 3: the scenario with history behind it ----------------
+    # -- blocks 1 to 3: the scenario with history behind it ----------------
     result = memory.retrieve(MAIN)
     before = baseline_plan(MAIN)
     after = memory_informed_plan(MAIN, result)
@@ -457,7 +464,7 @@ def main() -> None:
     print_retrieval(result)
     print_comparison(before, after, result, number=1, llm=args.llm)
 
-    #, block 4: the scenario with nothing behind it ----------------------
+    # -- block 4: the scenario with nothing behind it ----------------------
     cold_ctx = COLD_STARTS[args.cold_start]
     cold_number = COLD_START_NUMBER[args.cold_start]
     cold_result = memory.retrieve(cold_ctx)
