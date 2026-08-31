@@ -27,7 +27,7 @@ function Record({ record }) {
         : record.type === "critic"
           ? `depth ${record.depth} · ${record.candidate} · adj ${Number(record.code_adjusted).toFixed(1)}`
           : record.type === "prune"
-            ? `pruned ${JSON.stringify(record.picks || record.candidate)} — ${record.reason}`
+            ? `pruned ${JSON.stringify(record.picks || record.candidate)}: ${record.reason}`
             : record.type === "escalation"
               ? record.message
               : record.type;
@@ -64,7 +64,7 @@ export default function RunTrace() {
   if (error) return <p className="status error">{error}</p>;
   if (!runs) return <p className="status">loading runs…</p>;
   if (runs.length === 0)
-    return <p className="status">no trajectory logs yet — run demo.py or press Refresh on Day Plan</p>;
+    return <p className="status">no trajectory logs yet, run demo.py or press Refresh on Day Plan</p>;
 
   return (
     <div className="trace">

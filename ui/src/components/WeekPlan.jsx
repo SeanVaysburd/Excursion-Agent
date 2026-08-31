@@ -29,7 +29,7 @@ export default function WeekPlan() {
     return (
       <p className="status">
         {state.refresh
-          ? "running the weekly Tree-of-Thought (7 daily plans + beam search — several minutes)…"
+          ? "running the weekly Tree-of-Thought (7 daily plans + beam search, several minutes)…"
           : "loading latest weekly run…"}
       </p>
     );
@@ -86,7 +86,7 @@ export default function WeekPlan() {
               <h3>naive rank-by-sum vs Tree-of-Thought</h3>
               {plan.contrast.differing_days.length === 0 ? (
                 <p className="fine">
-                  no contrast this week (naive == ToT — reported honestly;
+                  no contrast this week (naive == ToT, reported honestly;
                   try another week)
                 </p>
               ) : (
@@ -97,7 +97,7 @@ export default function WeekPlan() {
                     </p>
                   ))}
                   <p className="fine">
-                    dominant penalty: {plan.contrast.dominant_penalty} — a
+                    dominant penalty: {plan.contrast.dominant_penalty}. A
                     set&apos;s value is not the sum of its parts
                   </p>
                 </>

@@ -12,7 +12,7 @@ export default function App() {
       <header>
         <h1>Excursion Agent</h1>
         <p className="tagline">
-          plan the free hours — birding, hikes, city events, museums
+          plan the free hours: birding, hikes, city events, museums
         </p>
         <nav>
           {TABS.map((name, index) => (

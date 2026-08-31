@@ -22,7 +22,7 @@ from src.tools.base import RunContext, ToolResult, fetch
 BASE = "https://api.ebird.org/v2"
 TAXONOMY_CACHE = config.ROOT / ".cache" / "ebird_taxonomy_species.json"
 
-UNAVAILABLE_NOTE = "eBird unavailable — reduced bird coverage"
+UNAVAILABLE_NOTE = "eBird unavailable - reduced bird coverage"
 
 
 def _key() -> str | None:
