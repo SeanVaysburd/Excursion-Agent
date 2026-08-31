@@ -1,20 +1,20 @@
 """Weekly Tree-of-Thought beam search over the daily ranked lists.
 
-Why not rank-by-sum: a set's value is not the sum of its parts -- three
+Why not rank-by-sum: a set's value is not the sum of its parts, three
 9-point birding mornings is a worse WEEK than birding + a hike + a museum.
 The critic re-scores each partial set for variety, walking load, and
 transit fatigue at every expansion; the beam keeps the best 4 sets alive.
 
 Mechanics (frozen spec + plan pre-decisions):
 - node = immutable partial set (frozen dataclass; `dataclasses.replace`
-  on expand -- a parent is structurally impossible to mutate, no deepcopy)
+  on expand, a parent is structurally impossible to mutate, no deepcopy)
 - thought = deciding the next day, Monday -> Sunday; no-window days skipped
 - branch = one of that day's top-3 (highest final_score ACROSS the day's
   slots; a day contributes exactly ONE excursion)
 - critic = one structured call per expansion; code RECOMPUTES
   adjusted = base_sum - sum(penalties) and logs any arithmetic mismatch
 - prune = keep top-4 per depth AND drop sets > 3.0 below the depth leader
-- ties = least weekly transit, then a per-run seeded Random -- children
+- ties = least weekly transit, then a per-run seeded Random, children
   are built from gather()'s argument-ordered return, so completion order
   never influences results
 - critic-call bound = 3 + 12*(D-1) for D usable days; asserted in eval
@@ -140,7 +140,7 @@ rationale: at most two sentences naming the dominant factor.
 def _critic_prompt(day: date, weekday: str, set_lines: str, candidate_line: str,
                    base_sum: float, walk: float, transit: int) -> str:
     return CRITIC_PROMPT.format(
-        set_lines=set_lines or "  (empty -- this is the first day)",
+        set_lines=set_lines or "  (empty, this is the first day)",
         day=day.isoformat(), weekday=weekday, candidate_line=candidate_line,
         base_sum=base_sum, walk_miles=walk,
         walk_threshold=config.WALKING_WEEK_MILES,
@@ -312,7 +312,7 @@ def _candidate_walk(candidate: ScoredCandidate) -> float:
     for adjustment in candidate.adjustments:
         pass
     # site/venue walk_miles are looked up by the waterfall's catalogs; the
-    # candidate carries its site name -- fall back to a flat 2.0 for events.
+    # candidate carries its site name, fall back to a flat 2.0 for events.
     import json as _json
 
     for path, key in ((config.DATA_DIR / "sites.json", "sites"),

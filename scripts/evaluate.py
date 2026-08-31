@@ -10,7 +10,7 @@ source trace with its real timestamp, provider, and eBird-key mode, and
 carries the honesty captions beside the numbers they qualify:
 - forced-error and escalation runs are SIMULATED/fixture, and labeled;
 - the naive-vs-ToT KEY RESULT runs on the authored synthetic week,
-  selected because it exercises the contrast -- the disclosure sits
+  selected because it exercises the contrast, the disclosure sits
   beside the result, and a contrast-free live week is reported honestly.
 
     python -m scripts.evaluate [--date YYYY-MM-DD] [--skip-runs]
@@ -118,8 +118,8 @@ def compute(traces: dict[str, Path]) -> str:
     rate = (valid / emitted) if emitted else 1.0
     lines += ["", "## Headline metrics", "",
               f"- **Groundedness**: {rate:.1%} of evidence ids emitted by agents "
-              f"resolved to fetched records ({valid}/{emitted}; denominator is "
-              f"PRE-strip -- a post-drop rate would be trivially 100%). "
+              f"resolved to fetched records ({valid}/{emitted}; the denominator "
+              f"counts everything emitted BEFORE stripping, so 100% means something). "
               f"{dropped} candidate(s) dropped for zero valid evidence. Target: 100%."]
 
     # ---- hard constraints ------------------------------------------------
@@ -140,11 +140,11 @@ def compute(traces: dict[str, Path]) -> str:
         tag, record = esc[0]
         lines.append(f"- **Escalation**: triggered in `{tag}` "
                      f"({record['reason']}): \"{record['message'][:90]}...\" "
-                     f"-- fixture calendar `data/calendar_fullyblocked.ics`; "
+                     f"(fixture calendar `data/calendar_fullyblocked.ics`); "
                      f"the agent stopped and asked instead of guessing.")
     else:
         lines.append("- **Escalation**: NOT DEMONSTRATED (no escalation record "
-                     "found -- run the fixture).")
+                     "found; run the fixture).")
 
     # ---- fallbacks / forced error ---------------------------------------
     forced = {tag: recs for tag, recs in all_records.items()
@@ -214,7 +214,7 @@ def compute(traces: dict[str, Path]) -> str:
         if naive and sets:
             winner = sets[0]
             lines += ["*(Disclosure: this weekly run uses the authored synthetic",
-                      "calendar week -- selected because it exercises the",
+                      "calendar week, selected because it exercises the",
                       "contrast. Live-data variance means another week may show",
                       "no contrast; that outcome is reported here honestly when",
                       "it happens, and re-running with `--date` in another week",
@@ -232,7 +232,7 @@ def compute(traces: dict[str, Path]) -> str:
                     f"Naive base sum {contrast['naive_base_sum']:.1f} vs ToT "
                     f"adjusted {contrast['tot_adjusted']:.1f}; "
                     f"{len(differ_dates)} day(s) flipped; dominant penalty: "
-                    f"**{contrast.get('dominant_penalty')}** -- the Week-4 "
+                    f"**{contrast.get('dominant_penalty')}**. The Week-4 "
                     f"design claim (a set's value is not the sum of its parts) "
                     f"demonstrated on a real run.")
             else:
@@ -273,7 +273,7 @@ def compute(traces: dict[str, Path]) -> str:
     if control:
         n, bonus, source_label = control
         lines.append(f"- With the zero-lifers control (*{source_label}*): {n} "
-                     f"lifer(s), bonus +{bonus:.1f} -- same site, same day, "
+                     f"lifer(s), bonus +{bonus:.1f}. Same site, same day; "
                      f"the delta is the life-list gap.")
     if not (with_gaps and control):
         lines.append("- NOT fully demonstrated yet (need S4 and S4_control runs).")

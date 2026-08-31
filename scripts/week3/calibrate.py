@@ -51,7 +51,7 @@ GENUINE = [
 ]
 
 # Band 2: a real outing the log has nothing to say about. With the pre-filter
-# gone, these reach the ranker on similarity alone -- the cutoff is all that
+# gone, these reach the ranker on similarity alone, the cutoff is all that
 # stops a hike note being served as kayaking experience.
 NO_HISTORY = [
     ctx("summer", "kayaking", "Sebago Canoe Club", window="08:00-13:00"),
@@ -99,7 +99,7 @@ def main() -> None:
     print("=" * 78)
 
     band_1: list[float] = []
-    print("\n  band 1 -- genuine history for the request")
+    print("\n  band 1, genuine history for the request")
     for probe in GENUINE:
         res = memory.retrieve(probe, cutoff=-1.0)
         best = res.candidates[0].similarity
@@ -107,7 +107,7 @@ def main() -> None:
         print(f"    {best:.3f}   {probe.season:<7}{probe.activity_type:<14}{probe.site}")
 
     band_2: list[float] = []
-    print("\n  band 2 -- real outing, nothing in the log about it")
+    print("\n  band 2, real outing, nothing in the log about it")
     for probe in NO_HISTORY:
         res = memory.retrieve(probe, cutoff=-1.0)
         best = res.candidates[0]
@@ -119,7 +119,7 @@ def main() -> None:
         )
 
     band_3: list[float] = []
-    print("\n  band 3 -- unrelated text")
+    print("\n  band 3, unrelated text")
     for text in UNRELATED:
         nodes = VectorIndexRetriever(index=memory.index, similarity_top_k=1).retrieve(
             text

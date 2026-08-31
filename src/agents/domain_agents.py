@@ -2,7 +2,7 @@
 
 The orchestrator PRE-FETCHES all tool data and hands each agent a pack
 (design note for the README: pre-fetching is what makes the politeness
-batching enforceable -- the spec's "one call + tools" is preserved
+batching enforceable, the spec's "one call + tools" is preserved
 semantically, the tools feed the call). Agents never touch the network.
 """
 

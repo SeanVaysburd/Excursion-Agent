@@ -1,7 +1,7 @@
 """NYC Open Data permitted events (Socrata tvpp-9vvx).
 
 The spec's "filter out film permits" is an ALLOW-list here because the live
-vocabulary has no film event_type at all -- film/TV shows up as "Production
+vocabulary has no film event_type at all, film/TV shows up as "Production
 Event" / "Theater Load in and Load Outs", and 82% of raw rows are permitted
 youth/adult sports that aren't excursions either. Rows carry no coordinates,
 so transit downstream falls back to per-borough matrix entries.

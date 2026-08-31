@@ -52,7 +52,7 @@ async def fetch_forecast(ctx: RunContext, lat: float, lon: float) -> ToolResult:
 
     hours: list[WxHour] = []
     for i, stamp in enumerate(times):
-        # API returns local-naive ISO because we pinned timezone= -- attach
+        # API returns local-naive ISO because we pinned timezone=, attach
         # the zone at this boundary; nothing naive leaves this module.
         dt = datetime.fromisoformat(stamp).replace(tzinfo=config.TZ)
         evidence_id = ctx.registry.register(
@@ -86,7 +86,7 @@ def gate_outdoor(window_hours: list[WxHour]) -> tuple[bool, list[str], list[str]
     """Apply the extreme-weather thresholds to one free window.
 
     Returns (gated, human reasons, evidence ids of the offending hours).
-    Missing data never gates -- an absent forecast is a fallback situation,
+    Missing data never gates, an absent forecast is a fallback situation,
     not evidence of bad weather.
     """
     reasons: list[str] = []

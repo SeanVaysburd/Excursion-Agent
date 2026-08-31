@@ -7,7 +7,7 @@ the system runs correctly on iNaturalist alone.
 
 Lifer matching filters observations to taxonomy category == "species"
 first: recent-obs feeds include spuh/slash/hybrid/subspecies codes, and
-diffing those against a life list would manufacture fake lifers -- the one
+diffing those against a life list would manufacture fake lifers, the one
 failure mode the S4 headline claim cannot afford.
 """
 

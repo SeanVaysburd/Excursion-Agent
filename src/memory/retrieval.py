@@ -2,7 +2,7 @@
 Long-term memory for the excursion-planning agent.
 
 This is the ONLY retrieval component in the agent. The structured feeds it
-also uses -- weather, eBird, transit, calendar -- are ordinary API calls and
+also uses, weather, eBird, transit, calendar, are ordinary API calls and
 have no place here. What lives here is the part that is free text and can
 only be queried semantically: the user's own notes on past excursions.
 
@@ -22,7 +22,7 @@ There is no metadata pre-filter. Season and activity type are inputs to the
 re-ranking score rather than hard gates, so a strong match in an adjacent
 season can still surface. The cost of that choice is that the similarity
 cutoff is now the only thing standing between a cold start and a confidently
-wrong answer -- see SIMILARITY_CUTOFF below.
+wrong answer, see SIMILARITY_CUTOFF below.
 """
 
 from __future__ import annotations
@@ -86,7 +86,7 @@ TOP_K = 3  # returned to the planner, after re-ranking
 # Week-3 scripts (and the calibration evidence) import it from this module.
 SIMILARITY_CUTOFF = config.SIMILARITY_CUTOFF
 
-# Composite re-ranking. Similarity dominates -- the other three are nudges
+# Composite re-ranking. Similarity dominates, the other three are nudges
 # that break ties and pull the genuinely comparable outing above the merely
 # similarly-worded one. They deliberately do not sum to enough to rescue
 # something the embedding thought was irrelevant.
@@ -113,7 +113,7 @@ def to_cosine(store_score: float) -> float:
     The collection is created with hnsw:space=cosine, so Chroma returns
     distance = 1 - cosine_similarity. llama-index's ChromaVectorStore then
     hands back exp(-distance), which ranks correctly but is not a similarity
-    anyone can reason about -- two orthogonal vectors score 0.37, not 0.
+    anyone can reason about, two orthogonal vectors score 0.37, not 0.
 
     exp() is invertible, so nothing is lost: cosine = 1 + ln(score). Scores
     are normalised at retrieval time and the cutoff is applied afterwards,
@@ -184,7 +184,7 @@ class PlanningContext:
         return (
             f"{self.season} {activity} trip to {self.site}, "
             f"{self.day_of_week} {self.time_of_day}. "
-            f"How did past trips like this go -- timing, crowds, conditions, "
+            f"How did past trips like this go, timing, crowds, conditions, "
             f"and what made them good or bad?"
         )
 
@@ -249,7 +249,7 @@ class RetrievalResult:
         if self.has_history:
             return ""
         if not self.candidates:
-            return "the memory store is empty -- nothing to rank"
+            return "the memory store is empty, nothing to rank"
         best = max(c.similarity for c in self.candidates)
         return (
             f"all {len(self.candidates)} candidates fell below the "
@@ -270,7 +270,7 @@ class ExcursionMemory:
         dates = [date.fromisoformat(d.metadata["date"]) for d in docs]
         self.oldest, self.newest = min(dates), max(dates)
 
-    # -- construction ------------------------------------------------------
+    #, construction ------------------------------------------------------
     @staticmethod
     def configure_settings() -> None:
         Settings.embed_model = HuggingFaceEmbedding(model_name=EMBED_MODEL)
@@ -280,7 +280,7 @@ class ExcursionMemory:
         Settings.llm = MockLLM()
 
         # One entry = one node. Entries are one to three sentences and are
-        # already the natural semantic unit -- splitting them would separate
+        # already the natural semantic unit, splitting them would separate
         # "went midday" from "packed with people", which is the whole lesson.
         # The splitter is sized so it can never fire; parse_nodes() below
         # asserts that it didn't.
@@ -306,7 +306,7 @@ class ExcursionMemory:
                     # Season, type and site are part of what a planning query
                     # asks about, so they stay in the embedded text. The id,
                     # date and rating are for re-ranking and for explaining a
-                    # result -- as embedded tokens they are just noise.
+                    # result, as embedded tokens they are just noise.
                     excluded_embed_metadata_keys=["entry_id", "date", "rating"],
                 )
             )
@@ -319,7 +319,7 @@ class ExcursionMemory:
         if len(nodes) != len(docs):
             raise RuntimeError(
                 f"expected one node per entry, got {len(nodes)} nodes from "
-                f"{len(docs)} documents -- an entry was chunked"
+                f"{len(docs)} documents, an entry was chunked"
             )
         return nodes
 
@@ -368,7 +368,7 @@ class ExcursionMemory:
 
         return cls(index=index, collection=collection, docs=docs)
 
-    # -- retrieval ---------------------------------------------------------
+    #, retrieval ---------------------------------------------------------
     def _score(self, ctx: PlanningContext, node: NodeWithScore) -> RankedCandidate:
         md = node.metadata
         similarity = node.score or 0.0
@@ -402,7 +402,7 @@ class ExcursionMemory:
         """Search the whole corpus, drop weak matches, re-rank, return top N.
 
         Order matters. The cutoff is applied to raw cosine similarity BEFORE
-        re-ranking, because that is the space it was calibrated in -- letting
+        re-ranking, because that is the space it was calibrated in, letting
         a recency or season bonus lift an irrelevant note over the bar would
         make the threshold meaningless.
         """

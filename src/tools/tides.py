@@ -2,7 +2,7 @@
 
 datum=MLLW is mandatory (omission is a hard 400, which under the no-4xx-
 retry rule means instant fallback); interval=hilo keeps it to ~4 rows/day
-instead of 240. Timestamps arrive naive-local (lst_ldt) -- the zone is
+instead of 240. Timestamps arrive naive-local (lst_ldt), the zone is
 attached here and nothing naive leaves this module.
 """
 

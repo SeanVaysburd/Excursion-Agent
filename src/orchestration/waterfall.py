@@ -7,7 +7,7 @@ Every stage is trajectory-logged with latency. Zero usable windows is an
 ESCALATION: the run stops with a clarification message instead of
 guessing. Data-level fallbacks (widened radius, seasonal defaults) and
 LLM-level fallbacks (unpersonalized template candidates) both surface as
-confidence=low with the reason stated -- never invented data.
+confidence=low with the reason stated, never invented data.
 """
 
 from __future__ import annotations
@@ -169,7 +169,7 @@ async def run_daily(
     if not windows:
         message = (
             f"No usable free windows on {day.isoformat()} ({weekday}) after "
-            f"hard calendar blocks. I won't guess -- free up a slot or pick "
+            f"hard calendar blocks. I won't guess. Free up a slot or pick "
             f"another day (demo.py --date)."
         )
         logger.escalation("zero_free_windows", message)
@@ -205,7 +205,7 @@ async def run_daily(
         logger.step("weather_gate", "open-meteo", wx.status, t.ms,
                     note=f"forecast unavailable ({wx.note}); no gate applied",
                     fallback_taken=True)
-        plan.notes.append("weather unavailable -- outdoor candidates carry low confidence")
+        plan.notes.append("weather unavailable, outdoor candidates carry low confidence")
 
     # ---- stage 3: prefetch + evidence packs + parallel agents ------------
     season = season_of(day)
@@ -216,7 +216,7 @@ async def run_daily(
         regions: dict[str, dict] = {}
         for site in sites:
             # Bird feeds are only fetched for regions that actually contain
-            # birding candidates -- a hike-only region gets no eBird/iNat
+            # birding candidates, a hike-only region gets no eBird/iNat
             # calls (call-budget discipline, not a coverage loss).
             if site["category"] in ("birding", "kayaking"):
                 regions.setdefault(site["region_id"], site)
@@ -276,7 +276,7 @@ async def run_daily(
         cid = f"site@{site['id']}"
         evidence_id = ctx.registry.register(f"site:{site['id']}", site)
         nature_lines.append(
-            f"{evidence_id} | {site['name']} -- {site['category']}, "
+            f"{evidence_id} | {site['name']}, {site['category']}, "
             f"{'coastal, ' if site.get('coastal') else ''}typical walk {site['walk_miles']} mi"
         )
         nature_candidates.append(
@@ -422,7 +422,7 @@ async def run_daily(
         cold = not memory_lines
         if cold:
             memory_block = (
-                "  none -- no relevant history above the similarity cutoff "
+                "  none. no relevant history above the similarity cutoff "
                 "(cold start: plan from live evidence, confidence=low, say so)"
             )
         evidence = list(dict.fromkeys((wx_lines if domain != "indoor" else wx_lines[:4]) + lines))
@@ -543,7 +543,7 @@ async def run_daily(
 
 def _fallback_report(domain: str, pack: EvidencePack, error: str) -> AgentReport:
     """Unpersonalized template when the planner LLM fails: never invented
-    data -- one safe default built from real fetched records, confidence
+    data, one safe default built from real fetched records, confidence
     low, the failure stated in the reason (spec fallback rule)."""
     candidates: list[CandidateScore] = []
     if pack.candidates:

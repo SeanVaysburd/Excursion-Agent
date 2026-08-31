@@ -1,5 +1,5 @@
 """Malformed LLM output must land in the recovery ladder and then the
-fallback path -- never crash. Proven with a stub provider returning
+fallback path, never crash. Proven with a stub provider returning
 garbage (no network, no model)."""
 
 from __future__ import annotations

@@ -3,7 +3,7 @@
   ollama      (quickstart default) ChatOllama, grammar-constrained
               json_schema structured output, free, local
   claude-sdk  the claude-agent-sdk package wrapping the Claude Code CLI's
-              subscription auth -- dev runs bill the plan's Agent SDK
+              subscription auth, dev runs bill the plan's Agent SDK
               credit, never API credits. Used purely as a completion
               backend: no tools, one turn.
 
@@ -12,14 +12,14 @@ politeness discipline for LLM calls: a per-provider concurrency semaphore,
 per-call timeouts, and per-run call counting via RunContext.llm_calls.
 
 GUARD (user-mandated): claude-sdk with ANTHROPIC_API_KEY set in the
-environment refuses to run -- a set key silently shadows subscription auth
+environment refuses to run, a set key silently shadows subscription auth
 and would bill API credits unnoticed.
 
 Recovery ladder for structured output (identical shape both providers,
-per the no-provider-forks rule): one retry -- shrunk evidence pack if the
+per the no-provider-forks rule): one retry, shrunk evidence pack if the
 caller provides a shrink callback (the realistic Ollama failure is a
 truncated prompt yielding a degenerate object), else a JSON-schema
-reminder -- then the caller's fallback path with confidence=low and the
+reminder, then the caller's fallback path with confidence=low and the
 parse failure stated. Schemas are never loosened.
 """
 
@@ -69,7 +69,7 @@ class LLMAdapter:
         self._semaphore = asyncio.Semaphore(config.LLM_SEMAPHORE.get(provider, 2))
         self._timeout = config.LLM_TIMEOUT_S.get(provider, 120)
 
-    # -- public ------------------------------------------------------------
+    #, public ------------------------------------------------------------
     async def structured(
         self,
         prompt: str,
@@ -99,7 +99,7 @@ class LLMAdapter:
             provider=self.provider,
         )
 
-    # -- internals ---------------------------------------------------------
+    #, internals ---------------------------------------------------------
     async def _attempt(
         self, prompt: str, schema: type[BaseModel], purpose: str, ctx: RunContext
     ) -> LLMResult:
@@ -189,7 +189,7 @@ def get_llm() -> LLMAdapter:
         if provider not in config.LLM_SEMAPHORE:
             raise ProviderConfigError(
                 f"LLM_PROVIDER={provider!r} is not one of "
-                f"{sorted(config.LLM_SEMAPHORE)} -- check .env"
+                f"{sorted(config.LLM_SEMAPHORE)}, check .env"
             )
         if provider == "claude-sdk" and os.environ.get("ANTHROPIC_API_KEY"):
             raise ProviderConfigError(
@@ -205,7 +205,7 @@ def get_llm() -> LLMAdapter:
 async def probe(ctx: RunContext) -> None:
     """One cheap startup call proving the configured provider actually
     works (subscription auth for claude-sdk, a running server for ollama).
-    Fails loudly -- a broken provider must never degrade into silence."""
+    Fails loudly, a broken provider must never degrade into silence."""
     global _PROBED
     if _PROBED:
         return
@@ -226,6 +226,6 @@ async def probe(ctx: RunContext) -> None:
         )
         raise ProviderConfigError(
             f"LLM provider {adapter.provider!r} failed its startup probe "
-            f"({result.error}) -- {hint}"
+            f"({result.error}), {hint}"
         )
     _PROBED = True

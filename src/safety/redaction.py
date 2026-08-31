@@ -1,5 +1,5 @@
 """Secret redaction at every exit: logging, stdout/stderr, and uncaught
-exceptions -- not just the trajectory writer. Constraint 4 says keys never
+exceptions, not just the trajectory writer. Constraint 4 says keys never
 appear in logs, trajectory files, error messages, or console output; a
 redactor that only guards one of those is a redactor with three holes.
 

@@ -3,10 +3,10 @@ Demo: the same planning request answered with and without long-term memory.
 
 Prints four blocks, in order:
 
-    BLOCK 1  scenario setup       -- planning context and the query string
-    BLOCK 2  retrieval trace      -- 7 hits, the re-rank, the final 3
-    BLOCK 3  output comparison    -- (a) without retrieval vs (b) with
-    BLOCK 4  cold start           -- a request nothing in the log covers
+    BLOCK 1  scenario setup      , planning context and the query string
+    BLOCK 2  retrieval trace     , 7 hits, the re-rank, the final 3
+    BLOCK 3  output comparison   , (a) without retrieval vs (b) with
+    BLOCK 4  cold start          , a request nothing in the log covers
 
 Usage:
     python demo.py
@@ -15,7 +15,7 @@ Usage:
     python demo.py --emit-prompts            # write prompts/ for inspection
     python demo.py --cold-start backpacking  # use the other cold-start case
 
-Plain text only -- no colour, no emoji, wrapped to 78 columns.
+Plain text only, no colour, no emoji, wrapped to 78 columns.
 """
 
 from __future__ import annotations
@@ -48,7 +48,7 @@ LLM_DIR = ROOT / "docs" / "week3" / "llm_output"
 def block(number: int, title: str) -> None:
     print()
     print("=" * WIDTH)
-    print(f"BLOCK {number} -- {title}")
+    print(f"BLOCK {number}, {title}")
     print("=" * WIDTH)
 
 
@@ -91,7 +91,7 @@ def truncate(text: str, width: int) -> str:
 
 
 # --------------------------------------------------------------------------
-# BLOCK 1 -- scenario setup
+# BLOCK 1, scenario setup
 # --------------------------------------------------------------------------
 def print_setup(ctx: PlanningContext, result, number: int = 1) -> None:
     block(number, "SCENARIO SETUP")
@@ -110,7 +110,7 @@ def print_setup(ctx: PlanningContext, result, number: int = 1) -> None:
 
 
 # --------------------------------------------------------------------------
-# BLOCK 2 -- retrieval trace
+# BLOCK 2, retrieval trace
 # --------------------------------------------------------------------------
 def print_candidates(result) -> None:
     """Stage 1: the raw semantic hits."""
@@ -194,20 +194,20 @@ def print_retrieval(result) -> None:
     block(2, "RETRIEVAL TRACE")
 
     sub(
-        f"Stage 1 -- semantic search over {result.corpus_size} entries, "
+        f"Stage 1, semantic search over {result.corpus_size} entries, "
         f"top_k = {CANDIDATE_K}"
     )
     print_candidates(result)
 
-    sub("Stage 2 -- composite re-rank")
+    sub("Stage 2, composite re-rank")
     print_rerank(result)
 
-    sub(f"Stage 3 -- final {TOP_K} handed to the planner")
+    sub(f"Stage 3, final {TOP_K} handed to the planner")
     print_selection(result)
 
 
 # --------------------------------------------------------------------------
-# BLOCK 3 -- output comparison
+# BLOCK 3, output comparison
 # --------------------------------------------------------------------------
 def print_llm(number: int, condition: str) -> None:
     path = LLM_DIR / f"s{number}_{condition}.md"
@@ -251,12 +251,12 @@ def print_comparison(
 ) -> None:
     block(3, "OUTPUT COMPARISON")
 
-    sub("(a) WITHOUT RETRIEVAL -- no long-term memory consulted")
+    sub("(a) WITHOUT RETRIEVAL, no long-term memory consulted")
     print_recommendation(before)
     if llm:
         print_llm(number, "a")
 
-    sub("(b) WITH RETRIEVAL -- conditioned on the entries selected above")
+    sub("(b) WITH RETRIEVAL, conditioned on the entries selected above")
     print_recommendation(after, cited=after.citations)
     if llm:
         print_llm(number, "b")
@@ -268,8 +268,8 @@ def print_comparison(
     print(f"      {'-' * 62}")
     print(f"      {'time window':<16}{before.window:<24}{after.window}")
     print(
-        f"      {'confidence':<16}{before.confidence.split(' -- ')[0]:<24}"
-        f"{after.confidence.split(' -- ')[0]}"
+        f"      {'confidence':<16}{before.confidence.split(', ')[0]:<24}"
+        f"{after.confidence.split(', ')[0]}"
     )
     print(f"      {'basis':<16}{'generic defaults':<24}{evidence}")
     print()
@@ -289,7 +289,7 @@ def print_comparison(
 
 
 # --------------------------------------------------------------------------
-# BLOCK 4 -- cold start
+# BLOCK 4, cold start
 # --------------------------------------------------------------------------
 def print_cold_start(
     ctx: PlanningContext, result, after: Plan, number: int, llm: bool
@@ -328,7 +328,7 @@ def print_cold_start(
     print(kv("best similarity", f"{best:.3f}", label_w=18))
     print(kv("cutoff", f"{result.cutoff:.3f}", label_w=18))
     print(kv("entries clearing", f"{len(result.kept)}", label_w=18))
-    print(kv("outcome", "NO RELEVANT HISTORY -- cold-start fallback", label_w=18))
+    print(kv("outcome", "NO RELEVANT HISTORY, cold-start fallback", label_w=18))
     print()
     print(wrap(
         "Nothing reached the re-ranking stage, so the composite score never "
@@ -337,7 +337,7 @@ def print_cold_start(
         indent="    ",
     ))
 
-    sub("Fallback recommendation -- unpersonalized scoring")
+    sub("Fallback recommendation, unpersonalized scoring")
     print_recommendation(after)
     if llm:
         print_llm(number, "b")
@@ -345,7 +345,7 @@ def print_cold_start(
     print()
     print(wrap(
         f"Confidence is reported as "
-        f"'{after.confidence.split(' -- ')[0]}', and the basis line states the "
+        f"'{after.confidence.split(', ')[0]}', and the basis line states the "
         f"cold start outright: {after.basis}",
         indent="    ",
     ))
@@ -424,7 +424,7 @@ def main() -> None:
     w = WEIGHTS
 
     print("=" * WIDTH)
-    print("EXCURSION AGENT -- SEMANTIC MEMORY OVER PAST EXCURSION FEEDBACK")
+    print("EXCURSION AGENT, SEMANTIC MEMORY OVER PAST EXCURSION FEEDBACK")
     print("=" * WIDTH)
     print()
     print(wrap(
@@ -437,7 +437,7 @@ def main() -> None:
     print(kv("chunking", "one entry = one node, no splitting", indent=2, label_w=18))
     print(kv("embedding model", "all-MiniLM-L6-v2 (local, no API key)", indent=2, label_w=18))
     print(kv("vector store", "Chroma, persistent, cosine space", indent=2, label_w=18))
-    print(kv("pre-filter", "none -- semantic search over the full corpus", indent=2, label_w=18))
+    print(kv("pre-filter", "none, semantic search over the full corpus", indent=2, label_w=18))
     print(kv("candidates", f"{CANDIDATE_K}, re-ranked down to {TOP_K}", indent=2, label_w=18))
     print(kv(
         "weights",
@@ -448,7 +448,7 @@ def main() -> None:
     ))
     print(kv("similarity cutoff", f"{SIMILARITY_CUTOFF:.3f}", indent=2, label_w=18))
 
-    # -- blocks 1 to 3: the scenario with history behind it ----------------
+    #, blocks 1 to 3: the scenario with history behind it ----------------
     result = memory.retrieve(MAIN)
     before = baseline_plan(MAIN)
     after = memory_informed_plan(MAIN, result)
@@ -457,7 +457,7 @@ def main() -> None:
     print_retrieval(result)
     print_comparison(before, after, result, number=1, llm=args.llm)
 
-    # -- block 4: the scenario with nothing behind it ----------------------
+    #, block 4: the scenario with nothing behind it ----------------------
     cold_ctx = COLD_STARTS[args.cold_start]
     cold_number = COLD_START_NUMBER[args.cold_start]
     cold_result = memory.retrieve(cold_ctx)

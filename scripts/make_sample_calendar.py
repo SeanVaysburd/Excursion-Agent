@@ -2,8 +2,8 @@
 
 The committed sample must stay inside the live forecast horizon (~16
 days), so demo.py regenerates the SAME structure onto the current week
-when the file goes stale -- always with a printed notice. Structure
-(labeled synthetic; RRULE deliberately unused -- the parser doesn't
+when the file goes stale, always with a printed notice. Structure
+(labeled synthetic; RRULE deliberately unused, the parser doesn't
 expand it):
 
   Mon-Fri  09:00-17:30  Work (hard)
@@ -78,6 +78,48 @@ def build_fully_blocked(week_start: date) -> Calendar:
     return calendar
 
 
+def build_weeks(first_monday: date, weeks: int = 5) -> Calendar:
+    """Several deterministic weeks with varied availability, so different
+    questions in the Ask tab hit genuinely different free windows:
+      week 0: the standard sample week
+      week 1: class moves to Thursday; Wednesday afternoon off
+      week 2: Saturday fully booked (family trip); Sunday wide open
+      week 3: Friday off; Sunday brunch is soft
+      week 4+: standard again
+    """
+    assert first_monday.weekday() == 0
+    calendar = Calendar()
+    calendar.add("PRODID", PRODID + f" {weeks} weeks")
+    calendar.add("VERSION", "2.0")
+    for w in range(weeks):
+        days = [first_monday + timedelta(days=w * 7 + i) for i in range(7)]
+        variant = w % 4
+        for i in range(5):
+            if variant == 1 and i == 2:  # Wednesday: half day
+                calendar.add_component(_event(days[i], time(9, 0), time(13, 0), "Work"))
+            elif variant == 3 and i == 4:  # Friday off
+                continue
+            else:
+                calendar.add_component(_event(days[i], time(9, 0), time(17, 30), "Work"))
+        class_day = 3 if variant == 1 else 1
+        calendar.add_component(_event(days[class_day], time(18, 0), time(20, 0), "Evening class"))
+        if variant == 2:
+            calendar.add_component(_event(days[5], time(6, 0), time(22, 0), "Family trip upstate"))
+        else:
+            calendar.add_component(
+                _event(days[5], time(10, 30), time(11, 30), "Brunch with Alex (tentative)"))
+            calendar.add_component(_event(days[5], time(14, 0), time(20, 0), "Family afternoon"))
+        if variant == 3:
+            calendar.add_component(
+                _event(days[6], time(10, 0), time(11, 30), "Brunch with Sam (tentative)"))
+        elif variant != 2:
+            calendar.add_component(
+                _event(days[6], time(8, 0), time(9, 30), "Volunteer shift", soft_x=True))
+        if variant not in (2,):
+            calendar.add_component(_event(days[6], time(18, 0), time(21, 0), "Dinner at parents'"))
+    return calendar
+
+
 def monday_of(day: date) -> date:
     return day - timedelta(days=day.weekday())
 
@@ -91,6 +133,7 @@ def main() -> None:
     parser.add_argument("--week-start", type=date.fromisoformat, default=None)
     parser.add_argument("--out", type=Path, default=config.DATA_DIR / "calendar.ics")
     parser.add_argument("--fully-blocked", action="store_true")
+    parser.add_argument("--weeks", type=int, default=5)
     args = parser.parse_args()
 
     week_start = args.week_start or monday_of(date.today() + timedelta(days=7))
@@ -103,8 +146,8 @@ def main() -> None:
         write(build_fully_blocked(week_start), out)
     else:
         out = args.out
-        write(build_week(week_start), out)
-    print(f"wrote synthetic week starting {week_start} -> {out}")
+        write(build_weeks(week_start, args.weeks), out)
+    print(f"wrote {args.weeks} synthetic week(s) starting {week_start} -> {out}")
 
 
 if __name__ == "__main__":

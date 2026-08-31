@@ -1,4 +1,4 @@
-"""Static travel-time matrix -- deliberately one swappable function.
+"""Static travel-time matrix, deliberately one swappable function.
 
 Base minutes come from data/travel_times.json (a full GTFS routing engine
 is out of scope; this function's signature is the seam a real routing API
@@ -33,7 +33,7 @@ def _matrix() -> dict:
 def lookup(dest_id: str, borough: str | None = None) -> Trip | None:
     """Travel from home to a site/venue id, or a borough fallback.
 
-    Returns None when neither resolves -- the caller treats that as
+    Returns None when neither resolves, the caller treats that as
     unreachable-unknown and falls back rather than inventing minutes.
     """
     matrix = _matrix()

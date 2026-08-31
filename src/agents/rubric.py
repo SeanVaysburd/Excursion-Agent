@@ -1,7 +1,7 @@
 """The SHARED scoring rubric (Week-5 grader-feedback fix): one prompt
 template with identical 1-10 anchors for all three domain agents; only the
 domain examples and the evidence differ. Score comparability across
-domains is the whole point -- the waterfall ranks nature against events
+domains is the whole point, the waterfall ranks nature against events
 against museums on these numbers.
 """
 
@@ -65,7 +65,7 @@ CANDIDATES TO SCORE (score each once, in its best-fitting window):
 Rules:
 - reason: at most two sentences, grounded in cited evidence.
 - evidence_ids: only ids that appear above; cite what the reason uses.
-- A high similarity on a past excursion means RELEVANT, not good -- its
+- A high similarity on a past excursion means RELEVANT, not good. Its
   rating tells you how it went; learn from the bad ones too.
 - If past feedback for this context is absent, plan from live evidence
   alone, set confidence to "low", and say the cold start out loud in the

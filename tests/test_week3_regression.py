@@ -4,8 +4,8 @@ checkpoint output, byte-for-byte on the deterministic blocks.
 Blocks 1 (setup/query), 2 (retrieval trace) and 4 (cold start) are pure
 functions of the committed corpus + embedding model, so they must match
 docs/week3/expected_demo_output.txt exactly. Block 3 is included in the
-comparison too when present -- without --llm it is the deterministic
-rule-based planner -- but the assertion is anchored on 1/2/4 first so a
+comparison too when present, without --llm it is the deterministic
+rule-based planner, but the assertion is anchored on 1/2/4 first so a
 failure names the retrieval layer, not prose formatting.
 """
 
@@ -25,7 +25,7 @@ def _blocks(text: str) -> dict[int, str]:
     for line in text.splitlines():
         if line.startswith("BLOCK "):
             try:
-                current = int(line.split()[1])
+                current = int(line.split()[1].rstrip(",:"))
             except (IndexError, ValueError):
                 current = 0
             sections[current] = []
@@ -51,7 +51,7 @@ def test_week3_demo_reproduces_checkpoint_output():
         assert block in actual, f"BLOCK {block} missing from demo output"
         assert actual[block] == expected[block], (
             f"BLOCK {block} diverged from the committed Week-3 checkpoint "
-            f"output -- the port changed retrieval behavior"
+            f"output, the port changed retrieval behavior"
         )
 
     # The load-bearing facts, asserted independently of formatting:

@@ -37,7 +37,7 @@ from src.safety import redaction  # noqa: E402
 
 redaction.install()
 
-from scripts.make_sample_calendar import build_week, monday_of  # noqa: E402
+from scripts.make_sample_calendar import build_weeks, monday_of  # noqa: E402
 from src.agents.llm import get_llm, probe  # noqa: E402
 from src.orchestration.waterfall import DayPlan, run_daily  # noqa: E402
 from src.safety.trajectory import TrajectoryLogger  # noqa: E402
@@ -152,9 +152,11 @@ def ensure_calendar(calendar_path: Path, target: date) -> None:
     week_start = monday_of(target)
     content = calendar_path.read_text() if calendar_path.exists() else ""
     if week_start.isoformat().replace("-", "")[:8] not in content.replace("-", ""):
-        calendar_path.write_bytes(build_week(week_start).to_ical())
-        print(f"[notice] sample calendar regenerated for the week of {week_start} "
-              f"(same synthetic structure; committed sample was stale)")
+        from datetime import date as _date
+        anchor = monday_of(min(week_start, _date.today()))
+        calendar_path.write_bytes(build_weeks(anchor, 5).to_ical())
+        print(f"[notice] sample calendar regenerated: 5 synthetic weeks from "
+              f"{anchor} (committed sample was stale)")
 
 
 # --------------------------------------------------------------------------
@@ -249,7 +251,7 @@ async def run_scenario(name: str, ctx: RunContext, args) -> None:
             print("\n  S3 cold-start check:")
             if sebago is None:
                 print("    the model omitted the kayaking candidate from its "
-                      "scored output this run -- re-run S3 (honest miss, not "
+                      "scored output this run. re-run S3 (honest miss, not "
                       "a crash)")
             else:
                 print(f"    {sebago['name']}: final={sebago['final_score']} "

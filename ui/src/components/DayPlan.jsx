@@ -1,199 +1,81 @@
 import React, { useEffect, useState } from "react";
-import { approve, getDay } from "../api.js";
-
-function Badge({ level }) {
-  return <span className={`badge conf-${level}`}>{level}</span>;
-}
-
-function Card({ candidate, date, onApprove }) {
-  const base = candidate.base;
-  const adjustments = candidate.adjustments.filter((a) => a.delta !== 0);
-  return (
-    <div className="card">
-      <div className="card-head">
-        <strong>{base.name}</strong>
-        <span className="score">
-          {candidate.final_score.toFixed(1)}
-          <small> (model {base.score})</small>
-        </span>
-      </div>
-      <p className="reason">{base.reason}</p>
-      {candidate.transit_note && (
-        <p className="transit">⚠ {candidate.transit_note}</p>
-      )}
-      <div className="chips">
-        <Badge level={candidate.confidence} />
-        {adjustments.map((adjustment) => (
-          <span key={adjustment.label} className="chip adj">
-            {adjustment.label} {adjustment.delta > 0 ? "+" : ""}
-            {adjustment.delta.toFixed(1)}
-          </span>
-        ))}
-        {candidate.lifer_species.length > 0 && (
-          <span
-            className="chip lifer"
-            title={`potential lifers (synthetic, intentionally incomplete life list): ${candidate.lifer_species.join(", ")}`}
-          >
-            ★ {candidate.lifer_species.length} lifer
-            {candidate.lifer_species.length > 1 ? "s" : ""}
-          </span>
-        )}
-        {candidate.trip && (
-          <span className="chip">
-            {candidate.trip.minutes} min · {candidate.trip.lines.join("/")}
-            {candidate.trip.approximate ? " ≈" : ""}
-          </span>
-        )}
-      </div>
-      <div className="chips evidence">
-        {base.evidence_ids.slice(0, 5).map((id) => (
-          <span key={id} className="chip ev" title={id}>
-            {id.split(":")[0]}:{id.split(":").slice(1).join(":").slice(0, 14)}
-          </span>
-        ))}
-      </div>
-      <button className="approve" onClick={() => onApprove(candidate)}>
-        Approve → calendar
-      </button>
-    </div>
-  );
-}
+import { getDay, getRuns, startDay, watchRun } from "../api.js";
+import { relTime } from "../helpers.js";
+import { Skeleton } from "./bits.jsx";
+import FlowView from "./FlowView.jsx";
+import PlanView from "./PlanView.jsx";
 
 export default function DayPlan() {
   const [state, setState] = useState({ loading: true });
-  const [confirming, setConfirming] = useState(null);
-  const [written, setWritten] = useState(null);
+  const [runs, setRuns] = useState([]);
+  const [pinned, setPinned] = useState("");
+  const [liveRecords, setLiveRecords] = useState(null);
 
-  const load = (refresh) => {
-    setState({ loading: true, refresh });
-    getDay(refresh)
+  const load = (run) => {
+    setState({ loading: true });
+    getDay(run || undefined)
       .then((data) => setState({ data }))
       .catch((error) => setState({ error: String(error.message || error) }));
   };
-  useEffect(() => load(false), []);
+  useEffect(() => {
+    load();
+    getRuns().then(setRuns).catch(() => {});
+  }, []);
 
-  const doApprove = async () => {
-    const { candidate, window } = confirming;
-    const diff = await approve({
-      name: candidate.base.name,
-      date: state.data.plan.date,
-      window,
-      reason: candidate.base.reason,
-    }).catch((error) => ({ error: String(error.message || error) }));
-    setConfirming(null);
-    setWritten(diff);
+  const runLive = async () => {
+    try {
+      const started = await startDay();
+      setLiveRecords([]);
+      const records = await watchRun(started.trace_id, setLiveRecords);
+      const dayPlan = records.filter((r) => r.type === "day_plan").pop();
+      const summary = records.filter((r) => r.type === "run_summary").pop();
+      setLiveRecords(null);
+      if (dayPlan) {
+        setState({ data: { source: "live", trace: started.trace_id, plan: dayPlan.plan, summary } });
+      } else load();
+      getRuns().then(setRuns).catch(() => {});
+    } catch (error) {
+      setLiveRecords(null);
+      setState((s) => ({ ...s, error: String(error.message || error) }));
+    }
   };
 
-  if (state.loading)
-    return (
-      <p className="status">
-        {state.refresh
-          ? "running a live plan (weather, birds, transit, three agents)…"
-          : "loading latest run…"}
-      </p>
-    );
-  if (state.error)
-    return (
-      <div>
-        <p className="status error">{state.error}</p>
-        <button onClick={() => load(true)}>Run live now</button>
-      </div>
-    );
+  if (state.loading) return <Skeleton h={110} n={3} />;
 
-  const plan = state.data.plan;
+  const plan = state.data?.plan;
+  const summary = state.data?.summary;
+  const dayRuns = runs.filter((r) => /S1|S3|S4|day|ollama_S1|escalation|forced/.test(r.id));
+
   return (
     <div>
-      <div className="bar">
-        <h2>
-          {plan.date} ({plan.weekday})
-        </h2>
-        <span className="source">
-          {state.data.source === "live" ? "live run" : `latest run · ${state.data.trace}`}
-        </span>
-        <button onClick={() => load(true)}>Refresh (live run)</button>
-      </div>
-      {plan.escalated ? (
-        <p className="status error">{plan.escalation_message}</p>
-      ) : (
-        <>
-          {plan.windows.map((window) => (
-            <div key={window.label} className="window">
-              <h3>
-                free {window.label}{" "}
-                <small>({window.minutes} min)</small>
-                {window.soft.length > 0 && (
-                  <span className="chip soft">soft: {window.soft.join(", ")}</span>
-                )}
-                {(plan.gated[window.label] || []).length > 0 && (
-                  <span className="chip gated">
-                    weather-gated: {plan.gated[window.label].join(", ")}
-                  </span>
-                )}
-              </h3>
-              {(plan.gate_reasons[window.label] || []).map((reason) => (
-                <p key={reason} className="gate-reason">
-                  {reason}
-                </p>
-              ))}
-              <div className="cards">
-                {(plan.slots[window.label] || []).map((candidate) => (
-                  <Card
-                    key={candidate.base.candidate_id}
-                    candidate={candidate}
-                    date={plan.date}
-                    onApprove={(c) =>
-                      setConfirming({ candidate: c, window: window.label })
-                    }
-                  />
-                ))}
-              </div>
-            </div>
-          ))}
-          <details className="selfreports">
-            <summary>agent self-reports</summary>
-            {Object.entries(plan.self_reports).map(([domain, text]) => (
-              <p key={domain}>
-                <strong>{domain}</strong>
-                {plan.cold_starts[domain] ? " (cold start)" : ""}: {text}
-              </p>
+      <div className="pagehead">
+        <h2>{plan ? `${plan.date} (${plan.weekday})` : "Day plan"}</h2>
+        {state.data && <span className="sub">{state.data.trace}</span>}
+        <span className="spacer" />
+        {dayRuns.length > 0 && (
+          <select className="runpick" value={pinned}
+            onChange={(e) => { setPinned(e.target.value); load(e.target.value); }}>
+            <option value="">latest clean run</option>
+            {dayRuns.map((r) => (
+              <option key={r.id} value={r.id}>
+                {r.scenario} · {r.id.replace(/^sample_/, "")} · {relTime(r.mtime)}
+              </option>
             ))}
-          </details>
-        </>
-      )}
-      {confirming && (
-        <div className="modal-back" onClick={() => setConfirming(null)}>
-          <div className="modal" onClick={(event) => event.stopPropagation()}>
-            <h3>Add to calendar?</h3>
-            <p>
-              <strong>{confirming.candidate.base.name}</strong>
-              <br />
-              {plan.date} · {confirming.window}
-            </p>
-            <p className="fine">
-              Writes a VEVENT to the local working copy
-              (data/calendar.local.ics). Never happens without this
-              confirmation.
-            </p>
-            <button className="approve" onClick={doApprove}>
-              Confirm
-            </button>
-            <button onClick={() => setConfirming(null)}>Cancel</button>
-          </div>
+          </select>
+        )}
+        <button className="btn primary" onClick={runLive} disabled={!!liveRecords}>
+          {liveRecords ? "running…" : "Run live now"}
+        </button>
+      </div>
+      {liveRecords && <FlowView records={liveRecords} live />}
+      {state.error && !plan && (
+        <div className="empty">
+          <div className="big-ico">🌤️</div>
+          <p className="fine">{state.error}</p>
+          <button className="btn primary" onClick={runLive}>Run the first plan</button>
         </div>
       )}
-      {written && (
-        <div className="modal-back" onClick={() => setWritten(null)}>
-          <div className="modal" onClick={(event) => event.stopPropagation()}>
-            <h3>{written.error ? "Write failed" : "Written"}</h3>
-            {written.error ? (
-              <p className="status error">{written.error}</p>
-            ) : (
-              <pre>{JSON.stringify(written, null, 2)}</pre>
-            )}
-            <button onClick={() => setWritten(null)}>Close</button>
-          </div>
-        </div>
-      )}
+      {plan && <PlanView plan={plan} summary={summary} />}
     </div>
   );
 }

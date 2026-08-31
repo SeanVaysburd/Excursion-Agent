@@ -1,7 +1,7 @@
 """Groundedness and hard-constraint validators.
 
 Groundedness metric honesty: the rate is computed over evidence ids the
-agents EMITTED (pre-strip), not over survivors -- a post-drop rate would
+agents EMITTED (pre-strip), not over survivors, a post-drop rate would
 be 100% by construction and prove nothing. The 0-violations target belongs
 to the hard-constraint validator, which runs on final outputs where zero
 is a real, falsifiable claim.

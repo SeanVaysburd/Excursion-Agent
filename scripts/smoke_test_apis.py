@@ -4,7 +4,7 @@ vocabulary dump for NYC events.
 Run:  python -m scripts.smoke_test_apis
 
 No keys required. If EBIRD_API_KEY is set in .env it is exercised (header
-only -- the key is never printed); if not, the eBird check is skipped, which
+only, the key is never printed); if not, the eBird check is skipped, which
 is exactly the keyless mode the agent must survive.
 """
 

@@ -11,7 +11,7 @@ aspirational:
   3. retries: max 2, exponential backoff, network/5xx only, NEVER 4xx;
      a 429 circuit-breaks the source for the rest of the run
   4. batching is a caller-side design rule (one weather call per run, one
-     bird call per region) -- the cache makes accidental duplicates free,
+     bird call per region), the cache makes accidental duplicates free,
      the counters make them visible
   5. custom User-Agent on every request
   6. call accounting: per-source counters land in the run summary, and a
@@ -86,7 +86,7 @@ class EvidenceRegistry:
 class RunContext:
     """Everything scoped to one run: politeness state, evidence, counters.
 
-    Never module-level -- a long-lived API process must get a fresh context
+    Never module-level, a long-lived API process must get a fresh context
     per run or it would serve stale cache, keep counters forever, and hold
     circuit breakers open across unrelated runs. `demo.py --scenario all`
     passes one context through every scenario on purpose (the external-call
@@ -112,7 +112,7 @@ class RunContext:
         self._last_call: dict[str, float] = {}
         self._client: httpx.AsyncClient | None = None
 
-    # -- lifecycle ---------------------------------------------------------
+    #, lifecycle ---------------------------------------------------------
     @property
     def client(self) -> httpx.AsyncClient:
         if self._client is None or self._client.is_closed:
@@ -127,7 +127,7 @@ class RunContext:
         if self._client is not None and not self._client.is_closed:
             await self._client.aclose()
 
-    # -- accounting --------------------------------------------------------
+    #, accounting --------------------------------------------------------
     def total_external_calls(self) -> int:
         return sum(self.calls.values())
 
@@ -142,7 +142,7 @@ class RunContext:
                     "status": "error",
                     "note": (
                         f"external call count {self.total_external_calls()} exceeded "
-                        f"the {config.CALL_CEILING} ceiling -- design bug, not a "
+                        f"the {config.CALL_CEILING} ceiling, design bug, not a "
                         f"reason to raise limits"
                     ),
                 }
@@ -157,7 +157,7 @@ def _assert_allowed(url: str) -> None:
     host = urlparse(url).hostname or ""
     if host not in config.ALLOWED_HOSTS:
         raise DisallowedHostError(
-            f"host {host!r} is not on the documented API allowlist -- refusing"
+            f"host {host!r} is not on the documented API allowlist, refusing"
         )
 
 

@@ -76,7 +76,7 @@ def test_rerank_orders_differently_than_similarity_alone(memory):
 
 
 def test_s1_required_memory_citation_present(memory):
-    """The spec's S1 narrative cites the 4/10 midday-crowds memory -- hold
+    """The spec's S1 narrative cites the 4/10 midday-crowds memory, hold
     the corpus + retrieval to that, so the scenario never silently loses
     its graded citation."""
     result = memory.retrieve(ctx(*S1))
@@ -97,6 +97,6 @@ def test_calibration_bands_still_separate_at_cutoff(memory):
     cold_best = memory.retrieve(ctx(*COLD)).candidates[0].similarity
     assert genuine_best > SIMILARITY_CUTOFF > cold_best, (
         f"bands crossed the cutoff: genuine={genuine_best:.3f}, "
-        f"cold={cold_best:.3f} -- re-run scripts/week3/calibrate.py"
+        f"cold={cold_best:.3f}, re-run scripts/week3/calibrate.py"
     )
     assert config.SIMILARITY_CUTOFF == SIMILARITY_CUTOFF  # single source

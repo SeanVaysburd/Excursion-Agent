@@ -50,7 +50,7 @@ def test_candidate_with_zero_valid_ids_is_dropped():
 
 
 def test_metric_denominator_is_pre_strip_not_survivors():
-    """A post-drop rate would be trivially 100% -- the honest metric
+    """A post-drop rate would be trivially 100%, the honest metric
     counts every id the agents emitted."""
     report = AgentReport(
         candidates=[cand("a", ["fake:1"]), cand("b", ["memory:e02"])],

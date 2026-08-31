@@ -1,4 +1,4 @@
-"""NWS active alerts -- the extreme-weather fallback/corroboration source.
+"""NWS active alerts, the extreme-weather fallback/corroboration source.
 
 /alerts/active, never /alerts: the bare endpoint returns expired history
 (verified: 98 KB of stale alerts vs 233 bytes active).

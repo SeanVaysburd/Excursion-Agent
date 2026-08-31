@@ -2,8 +2,8 @@
 no untyped dict crosses an LLM boundary).
 
 `CandidateScore.score` is the model's raw 1-10 judgment. Everything that
-happens to a score after the model speaks -- lifer bonus, soft-conflict
-penalty, transit adjustment -- is a code-owned `Adjustment` on the wrapping
+happens to a score after the model speaks, lifer bonus, soft-conflict
+penalty, transit adjustment, is a code-owned `Adjustment` on the wrapping
 `ScoredCandidate`, and `final_score` is the only number the UI, the weekly
 ToT, and the eval consume. Keeping the model's integer and the code's
 arithmetic in separate fields is what lets the trace show exactly who
@@ -27,7 +27,7 @@ def downgrade(confidence: Confidence) -> Confidence:
 
 
 class CandidateScore(BaseModel):
-    """One scored excursion candidate -- identical schema for all three
+    """One scored excursion candidate, identical schema for all three
     domain agents (frozen-spec requirement)."""
 
     candidate_id: str
@@ -116,7 +116,7 @@ class CriticVerdict(BaseModel):
     """Weekly ToT critic output: adjusted total + ITEMIZED penalties.
 
     The orchestrator recomputes adjusted_total = base_sum - penalties and
-    logs any disagreement with the model's arithmetic -- the itemization is
+    logs any disagreement with the model's arithmetic, the itemization is
     the graded artifact, the subtraction is not the model's job to get
     wrong silently.
     """

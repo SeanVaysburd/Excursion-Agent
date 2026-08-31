@@ -55,7 +55,7 @@ def test_sibling_branches_cannot_contaminate_each_other():
     assert a.picks == ("day1", "day2-A") and b.picks == ("day1", "day2-B")
     assert a.base_sum == 15.0 and b.base_sum == 14.0
     assert a.walk_miles == 5.0 and b.walk_miles == 7.0
-    # Tuples are immutable -- no shared mutable state exists to leak through.
+    # Tuples are immutable, no shared mutable state exists to leak through.
     assert isinstance(a.picks, tuple)
 
 

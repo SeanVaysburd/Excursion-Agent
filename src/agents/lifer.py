@@ -3,7 +3,7 @@
 
 The taxonomy filter is load-bearing: eBird recent-obs feeds include spuh,
 slash, hybrid and subspecies codes, and diffing those against a life list
-would manufacture "lifers" that aren't countable species -- on the one
+would manufacture "lifers" that aren't countable species, on the one
 scenario (S4) whose headline claim is the named lifers.
 """
 

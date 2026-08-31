@@ -10,8 +10,8 @@ between planning with memory and planning without it, and that delta is
 visible either way.
 
 Two entry points:
-    baseline_plan()          -- no memory, generic defaults
-    memory_informed_plan()   -- same request, conditioned on retrieved history
+    baseline_plan()         , no memory, generic defaults
+    memory_informed_plan()  , same request, conditioned on retrieved history
 """
 
 from __future__ import annotations
@@ -58,7 +58,7 @@ def _shift(t: datetime, hours: float) -> datetime:
 # --------------------------------------------------------------------------
 # Signals: what a retrieved note is actually telling us
 # --------------------------------------------------------------------------
-# Keyword matching is crude, and it is crude on purpose -- it keeps the
+# Keyword matching is crude, and it is crude on purpose, it keeps the
 # reasoning inspectable, which is the point of the trace. A real planner hands
 # these notes to the model and lets it read them.
 SIGNALS: dict[str, tuple[str, ...]] = {
@@ -113,7 +113,7 @@ GENERIC_CAUTIONS: dict[str, tuple[str, ...]] = {
 def baseline_plan(ctx: PlanningContext) -> Plan:
     """The recommendation the agent gives with no long-term memory.
 
-    Structured feeds could still fill this in -- weather, transit, eBird --
+    Structured feeds could still fill this in, weather, transit, eBird --
     but none of them know how *this user's* previous trips went. Without that,
     the only honest default is the middle of the free window.
     """
@@ -131,7 +131,7 @@ def baseline_plan(ctx: PlanningContext) -> Plan:
     plan_end = _shift(plan_start, hours)
 
     return Plan(
-        basis="generic defaults -- no long-term memory consulted",
+        basis="generic defaults, no long-term memory consulted",
         headline=f"{opener} at {ctx.site}.",
         window=f"{_fmt(plan_start)}-{_fmt(plan_end)}",
         bullets=[
@@ -144,7 +144,7 @@ def baseline_plan(ctx: PlanningContext) -> Plan:
         cautions=list(
             GENERIC_CAUTIONS.get(ctx.activity_type, ("Check conditions before you go.",))
         ),
-        confidence="low -- nothing here is specific to you or to this site",
+        confidence="low, nothing here is specific to you or to this site",
     )
 
 
@@ -154,15 +154,15 @@ def baseline_plan(ctx: PlanningContext) -> Plan:
 def memory_informed_plan(ctx: PlanningContext, result: RetrievalResult) -> Plan:
     """The same request, conditioned on what retrieval brought back.
 
-    Falls straight back to baseline_plan() when memory is empty -- a cold
+    Falls straight back to baseline_plan() when memory is empty, a cold
     start should look like the unpersonalized system, not like a confident
     system with a thin excuse.
     """
     if not result.has_history:
         plan = baseline_plan(ctx)
-        plan.basis = f"no relevant history ({result.cold_start_reason}) -- unpersonalized fallback"
+        plan.basis = f"no relevant history ({result.cold_start_reason}), unpersonalized fallback"
         plan.cautions.append(
-            "First logged outing of this kind. Whatever happens, log it -- "
+            "First logged outing of this kind. Whatever happens, log it, "
             "it is what makes the next one better."
         )
         return plan
@@ -177,7 +177,7 @@ def memory_informed_plan(ctx: PlanningContext, result: RetrievalResult) -> Plan:
     bullets: list[str] = []
     cautions: list[str] = []
 
-    # -- timing ---------------------------------------------------------
+    #, timing ---------------------------------------------------------
     early_pays_off = "early" in sig_worked
     late_backfires = bool(sig_failed & {"midday", "crowded"})
 
@@ -202,7 +202,7 @@ def memory_informed_plan(ctx: PlanningContext, result: RetrievalResult) -> Plan:
             )
         bullets.append(
             f"That leaves {_fmt(plan_end)}-{_fmt(end)} of the free window. "
-            f"Spend it somewhere quieter or head home -- do not wait it out here."
+            f"Spend it somewhere quieter or head home, do not wait it out here."
         )
     else:
         plan_start = _shift(start, 1)
@@ -210,10 +210,10 @@ def memory_informed_plan(ctx: PlanningContext, result: RetrievalResult) -> Plan:
         headline = f"{ctx.site} looks workable anywhere in the free window."
         bullets.append("Nothing in your history argues for a specific start time.")
 
-    # -- conditions worth a warning --------------------------------------
+    #, conditions worth a warning --------------------------------------
     if "crowded" in sig_failed or "crowded" in sig_worked:
         cautions.append(
-            "Crowds are the recurring complaint at this site -- the early "
+            "Crowds are the recurring complaint at this site, the early "
             "window is what buys you the quiet, not luck."
         )
     if "tide" in (sig_worked | sig_failed):
@@ -224,14 +224,14 @@ def memory_informed_plan(ctx: PlanningContext, result: RetrievalResult) -> Plan:
     if "heat" in sig_failed:
         cautions.append("Heat and bugs ruined a past trip in this bucket. Start cool, carry water.")
     if "wind" in (sig_worked | sig_failed):
-        cautions.append("Wind has suppressed activity here before -- check the forecast.")
+        cautions.append("Wind has suppressed activity here before, check the forecast.")
     if "access" in (sig_worked | sig_failed):
         cautions.append("Confirm gate hours and transit times; access has bitten before.")
 
     ratings = [n.metadata["rating"] for n in result.kept]
     same_site = [n for n in result.kept if n.metadata["site"] == ctx.site]
     confidence = (
-        f"{'high' if len(same_site) >= 2 else 'moderate'} -- "
+        f"{'high' if len(same_site) >= 2 else 'moderate'}, "
         f"{len(result.kept)} matched entr{'y' if len(result.kept) == 1 else 'ies'}, "
         f"{len(same_site)} at this exact site, ratings {min(ratings)}-{max(ratings)}/10"
     )

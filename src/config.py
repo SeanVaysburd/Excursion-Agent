@@ -2,7 +2,7 @@
 Every tunable threshold in one commented place.
 
 Units are stated beside each value because the tools are pinned to imperial
-units and America/New_York time -- a number without its unit here is how a
+units and America/New_York time, a number without its unit here is how a
 weather gate silently shifts four hours or twenty degrees.
 
 This module must stay import-free of `src.*` (it is imported by everything,
@@ -21,7 +21,7 @@ ROOT = Path(__file__).resolve().parents[1]
 # --------------------------------------------------------------------------
 # Cache pinning: keep writes inside the repo (public-repo safety decision).
 # LLAMA_INDEX_CACHE_DIR is the knob llama-index actually reads for the
-# embedding weights (NOT HF_HOME -- verified on this machine). Offline mode
+# embedding weights (NOT HF_HOME, verified on this machine). Offline mode
 # is enabled only when the weights are already present, so a fresh clone can
 # still perform its one-time ~90 MB download.
 # --------------------------------------------------------------------------
@@ -44,7 +44,7 @@ ANTHROPIC_MODEL = os.environ.get("ANTHROPIC_MODEL", "claude-sonnet-4-6")
 OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "llama3.1:8b")
 
 # Approximate home origin (privacy: a neighborhood centroid near Grand Army
-# Plaza, Brooklyn -- deliberately NOT a residential address; README labels
+# Plaza, Brooklyn, deliberately NOT a residential address; README labels
 # it). Overridable per user via .env.
 HOME_LAT = float(os.environ.get("HOME_LAT", "40.67"))
 HOME_LON = float(os.environ.get("HOME_LON", "-73.97"))
@@ -96,7 +96,7 @@ LIFER_BONUS_CAP = 2.5  # min(CAP, BASE + PER * lifer_count)
 FINAL_SCORE_MIN, FINAL_SCORE_MAX = 0.0, 10.0
 
 # --------------------------------------------------------------------------
-# Memory (Week-3 module; calibrated on the 20-entry corpus -- see
+# Memory (Week-3 module; calibrated on the 20-entry corpus, see
 # scripts/week3/calibrate.py before changing)
 # --------------------------------------------------------------------------
 SIMILARITY_CUTOFF = 0.55
@@ -108,7 +108,7 @@ BEAM_WIDTH = 4
 BEAM_DEPTH = 7  # Monday..Sunday; days without windows are skipped
 PRUNE_MARGIN = 3.0  # drop sets more than this below the depth leader.
 #   Spec-frozen ABSOLUTE margin: note it bites hardest at depth 1, where
-#   running totals are smallest -- documented behavior, not a bug.
+#   running totals are smallest, documented behavior, not a bug.
 WALKING_WEEK_MILES = 40.0  # critic penalizes weekly walking above this
 TRANSIT_FATIGUE_WEEK_MIN = 420  # critic penalizes weekly transit above this
 SEED = 20260831  # tie-breaks only; per-run random.Random(SEED)
@@ -119,7 +119,7 @@ SEED = 20260831  # tie-breaks only; per-run random.Random(SEED)
 USER_AGENT = "excursion-agent-capstone (educational project; no scraping)"
 RATE_MIN_INTERVAL_S: dict[str, float] = {
     # seconds between calls to the same source (conservative; iNat's
-    # published ceiling is 60/min -- we stay far under it)
+    # published ceiling is 60/min, we stay far under it)
     "open-meteo": 1.0,
     "nws": 1.0,
     "noaa-tides": 1.0,
@@ -167,7 +167,7 @@ ALLOWED_HOSTS = {
 # --------------------------------------------------------------------------
 FORECAST_DAYS = 16  # one Open-Meteo call per run covers the whole horizon
 TIDE_STATION_DEFAULT = "8518750"  # The Battery, per the frozen spec;
-#   sites.json may override per site (the accuracy seam -- a data edit)
+#   sites.json may override per site (the accuracy seam, a data edit)
 EBIRD_DIST_KM = 25
 EBIRD_BACK_DAYS = 7
 INAT_RADIUS_KM = 25

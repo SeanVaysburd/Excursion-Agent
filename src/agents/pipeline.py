@@ -53,19 +53,19 @@ def process_report(
     """Run steps 1-7 for one agent's report. Returns (survivors sorted by
     final_score desc, groundedness stats, self-report finding summary)."""
 
-    # 1 -- groundedness
+    # 1, groundedness
     grounded, stats = validate_groundedness(report, registry_ids)
 
     # 6 (computed once; applied per candidate below to keep the order
-    # readable -- the scan itself has no per-candidate state)
+    # readable, the scan itself has no per-candidate state)
     finding = scan_self_report(report.self_report)
 
     survivors: list[ScoredCandidate] = []
     for base in grounded:
         candidate = ScoredCandidate(base=base, domain=domain, confidence=base.confidence)
 
-        # 2 -- cold-start override: per-domain (the whole pack was cold) OR
-        # per-candidate (one unlogged context inside a warm domain -- e.g.
+        # 2, cold-start override: per-domain (the whole pack was cold) OR
+        # per-candidate (one unlogged context inside a warm domain, e.g.
         # kayaking among well-logged birding sites).
         candidate_cold = base.candidate_id in (cold_candidate_ids or set())
         if cold_start or candidate_cold:
@@ -79,7 +79,7 @@ def process_report(
                           "(cold start within a warm domain)"))
             )
 
-        # 3 -- lifer bonus (nature only; code-side; species NAMED)
+        # 3, lifer bonus (nature only; code-side; species NAMED)
         if domain == "nature" and lifers:
             delta = lifer_mod.bonus(len(lifers))
             names = ", ".join(l["common_name"] for l in lifers[:5])
@@ -93,7 +93,7 @@ def process_report(
                 )
             )
 
-        # 4 -- soft calendar conflict
+        # 4, soft calendar conflict
         if base.window in soft_windows:
             candidate.adjustments.append(
                 Adjustment(
@@ -103,7 +103,7 @@ def process_report(
                 )
             )
 
-        # 5 -- transit
+        # 5, transit
         meta = dest_meta.get(base.candidate_id, {})
         trip = travel_matrix.lookup(
             meta.get("dest_id", base.candidate_id), meta.get("borough")
@@ -151,7 +151,7 @@ def process_report(
                         else f"{hit['line']} line {hit['alert_type']}"
                     )
 
-        # 6 -- self-report scan applies to the whole report's candidates
+        # 6, self-report scan applies to the whole report's candidates
         if finding.downgrade:
             candidate.confidence = downgrade(candidate.confidence)
             candidate.adjustments.append(
@@ -162,7 +162,7 @@ def process_report(
                 )
             )
 
-        # 7 -- final score
+        # 7, final score
         candidate.final_score = max(
             config.FINAL_SCORE_MIN,
             min(

@@ -1,4 +1,4 @@
-"""iNaturalist recent bird observations -- the always-available nature feed.
+"""iNaturalist recent bird observations, the always-available nature feed.
 
 v2 API only: v1 silently ignores `fields=` (verified 125 KB vs 466 bytes
 for the same query). One call per site region per run; radius in km.

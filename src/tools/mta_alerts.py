@@ -1,10 +1,10 @@
-"""MTA service alerts (GTFS-realtime JSON, keyless, ~1.3 MB) -- fetched
+"""MTA service alerts (GTFS-realtime JSON, keyless, ~1.3 MB), fetched
 once per run and indexed by subway route.
 
 Live-verified parsing rules the naive reading gets wrong:
 - 135/331 alerts carry MULTIPLE active_period entries; a period without an
   `end` is open-ended; a missing active_period list means "active".
-- 2 informed_entity rows lack route_id -- use .get().
+- 2 informed_entity rows lack route_id, use .get().
 - header_text.translation always has BOTH "en" and "en-html"; select
   language == "en" explicitly and never render the HTML variant.
 - Severity lives in the Mercury extension's alert_type; the exact-string

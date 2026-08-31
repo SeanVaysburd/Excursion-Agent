@@ -10,7 +10,7 @@ Pre-decided edge rules (RFC 5545 + reviewer-will-ask items):
   one day (date);
 - overlapping hard blocks are MERGED before subtraction;
 - windows shorter than MIN_WINDOW_MINUTES are discarded;
-- X-SOFT is icalendar vText -- compared as str(...).lower() == "true";
+- X-SOFT is icalendar vText, compared as str(...).lower() == "true";
 - RRULE is not expanded (documented limitation; the synthetic calendar
   must not use it).
 Everything leaves this module tz-aware in America/New_York.

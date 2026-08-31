@@ -1,5 +1,5 @@
 """ICS hard/soft parsing and free-window computation over the synthetic
-sample-week structure (generated in-test -- no committed-file coupling)."""
+sample-week structure (generated in-test, no committed-file coupling)."""
 
 from __future__ import annotations
 

@@ -4,8 +4,8 @@ The prompts the planner LLM actually receives.
 This is the real output of a RAG system: not the answer, but the augmented
 prompt. Two builders, matching the two demo conditions.
 
-    build_baseline_prompt()   -- the request alone, no memory
-    build_augmented_prompt()  -- the same request plus retrieved history
+    build_baseline_prompt()  , the request alone, no memory
+    build_augmented_prompt() , the same request plus retrieved history
 
 The only difference between them is the RELEVANT PAST EXCURSIONS block. That
 is the whole experiment, so nothing else is allowed to vary: same instructions,
@@ -23,7 +23,7 @@ Answer in exactly this shape, nothing before or after it:
 
 HEADLINE: one sentence telling me what to do.
 WHEN: a concrete time range inside my free window.
-CONFIDENCE: low | moderate | high, then " -- " and a short justification.
+CONFIDENCE: low | moderate | high, then ", " and a short justification.
 WHY:
 - two to four bullets of reasoning
 CAUTIONS:
@@ -79,7 +79,7 @@ def build_augmented_prompt(ctx: PlanningContext, result: RetrievalResult) -> str
             "recency)\n" + "\n".join(entries)
         )
         guidance = (
-            "These are the user's own notes. Weight them heavily -- they beat "
+            "These are the user's own notes. Weight them heavily, they beat "
             "general knowledge about this site. Note that a high similarity "
             "score means the entry is RELEVANT, not that the trip went well; "
             "the rating tells you that. Learn from the bad ones too."
@@ -87,7 +87,7 @@ def build_augmented_prompt(ctx: PlanningContext, result: RetrievalResult) -> str
     else:
         memory_block = (
             "RELEVANT PAST EXCURSIONS\n"
-            f"  none -- {result.cold_start_reason}"
+            f"  none, {result.cold_start_reason}"
         )
         guidance = (
             "Memory returned nothing above the relevance threshold, so you are "
