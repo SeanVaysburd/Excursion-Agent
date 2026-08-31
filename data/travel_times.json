@@ -1,0 +1,30 @@
+{
+  "_synthetic": "Static base travel-time matrix (minutes) from the APPROXIMATE home origin (a Brooklyn neighborhood centroid near Grand Army Plaza -- privacy: not a residential address). Authored for this capstone; a full GTFS routing engine is out of scope and this file sits behind the single swappable function in src/tools/travel_matrix.py. Lines use MTA route ids so live service alerts can match. borough_defaults cover dynamically fetched events, which carry no coordinates -- those lookups are flagged approximate.",
+  "origin": {"label": "approximate home origin (Brooklyn centroid)", "lat": 40.67, "lng": -73.97},
+  "destinations": {
+    "jamaica-bay": {"minutes": 65, "lines": ["Q", "A"]},
+    "marine-park": {"minutes": 45, "lines": ["B", "Q"]},
+    "floyd-bennett": {"minutes": 55, "lines": ["2", "Q"]},
+    "prospect-park": {"minutes": 10, "lines": ["B", "Q"]},
+    "green-wood": {"minutes": 25, "lines": ["R"]},
+    "central-park-ramble": {"minutes": 45, "lines": ["B", "Q"]},
+    "van-cortlandt": {"minutes": 75, "lines": ["2", "1"]},
+    "palisades": {"minutes": 90, "lines": ["A"]},
+    "harriman": {"minutes": 110, "lines": ["1"]},
+    "amnh": {"minutes": 40, "lines": ["B", "C"]},
+    "the-met": {"minutes": 45, "lines": ["4", "5", "6"]},
+    "brooklyn-museum": {"minutes": 8, "lines": ["2", "3"]},
+    "moma": {"minutes": 40, "lines": ["B", "D"]},
+    "nyhistorical": {"minutes": 42, "lines": ["B", "C"]},
+    "transit-museum": {"minutes": 20, "lines": ["2", "3"]},
+    "morgan": {"minutes": 35, "lines": ["Q", "6"]},
+    "mcny": {"minutes": 50, "lines": ["6"]}
+  },
+  "borough_defaults": {
+    "Manhattan": {"minutes": 45, "lines": ["2", "3", "Q"]},
+    "Brooklyn": {"minutes": 30, "lines": ["B", "Q"]},
+    "Queens": {"minutes": 60, "lines": ["7", "E"]},
+    "Bronx": {"minutes": 70, "lines": ["2", "5"]},
+    "Staten Island": {"minutes": 90, "lines": ["R"]}
+  }
+}

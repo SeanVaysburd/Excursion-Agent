@@ -1,0 +1,14 @@
+{
+  "_synthetic": "Outdoor site catalog authored for this capstone (labeled synthetic; approved addition to the spec's data files). region_id is the eBird/iNaturalist batching key: one recent + one notable + one iNat call per region per run. tide_station omitted = config default 8518750 (The Battery, per spec); overriding per site is the documented accuracy seam.",
+  "sites": [
+    {"id": "jamaica-bay", "name": "Jamaica Bay Wildlife Refuge", "category": "birding", "lat": 40.6188, "lng": -73.8253, "coastal": true, "walk_miles": 3.5, "region_id": "brooklyn-coastal", "borough": "Queens"},
+    {"id": "marine-park", "name": "Marine Park Salt Marsh", "category": "birding", "lat": 40.5977, "lng": -73.9235, "coastal": true, "walk_miles": 2.5, "region_id": "brooklyn-coastal", "borough": "Brooklyn"},
+    {"id": "floyd-bennett", "name": "Floyd Bennett Field", "category": "birding", "lat": 40.5891, "lng": -73.8968, "coastal": false, "walk_miles": 3.0, "region_id": "brooklyn-coastal", "borough": "Brooklyn"},
+    {"id": "prospect-park", "name": "Prospect Park", "category": "birding", "lat": 40.6602, "lng": -73.9690, "coastal": false, "walk_miles": 3.0, "region_id": "brooklyn-parks", "borough": "Brooklyn"},
+    {"id": "green-wood", "name": "Green-Wood Cemetery", "category": "birding", "lat": 40.6520, "lng": -73.9903, "coastal": false, "walk_miles": 2.8, "region_id": "brooklyn-parks", "borough": "Brooklyn"},
+    {"id": "central-park-ramble", "name": "Central Park Ramble", "category": "birding", "lat": 40.7778, "lng": -73.9697, "coastal": false, "walk_miles": 2.5, "region_id": "manhattan", "borough": "Manhattan"},
+    {"id": "van-cortlandt", "name": "Van Cortlandt Park", "category": "hike", "lat": 40.8973, "lng": -73.8860, "coastal": false, "walk_miles": 4.0, "region_id": "north", "borough": "Bronx"},
+    {"id": "palisades", "name": "Palisades Interstate Park", "category": "hike", "lat": 40.9526, "lng": -73.9210, "coastal": false, "walk_miles": 6.0, "region_id": "north", "borough": null},
+    {"id": "harriman", "name": "Harriman State Park", "category": "hike", "lat": 41.2306, "lng": -74.0853, "coastal": false, "walk_miles": 7.0, "region_id": "north", "borough": null}
+  ]
+}

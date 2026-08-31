@@ -1,0 +1,13 @@
+{
+  "_synthetic": "Indoor venue catalog authored for this capstone (labeled synthetic). Hours are simplified approximations for the demo, not live data; the indoor agent must respect them relative to the free window.",
+  "venues": [
+    {"id": "amnh", "name": "American Museum of Natural History", "borough": "Manhattan", "lat": 40.7813, "lng": -73.9740, "hours": {"open": "10:00", "close": "17:30", "closed_days": []}, "nearest_stop": "81 St-Museum of Natural History", "lines": ["B", "C"], "walk_miles": 1.8},
+    {"id": "the-met", "name": "The Metropolitan Museum of Art", "borough": "Manhattan", "lat": 40.7794, "lng": -73.9632, "hours": {"open": "10:00", "close": "17:00", "closed_days": ["Wednesday"]}, "nearest_stop": "86 St", "lines": ["4", "5", "6"], "walk_miles": 2.0},
+    {"id": "brooklyn-museum", "name": "Brooklyn Museum", "borough": "Brooklyn", "lat": 40.6712, "lng": -73.9636, "hours": {"open": "11:00", "close": "18:00", "closed_days": ["Monday", "Tuesday"]}, "nearest_stop": "Eastern Pkwy-Brooklyn Museum", "lines": ["2", "3"], "walk_miles": 1.4},
+    {"id": "moma", "name": "Museum of Modern Art", "borough": "Manhattan", "lat": 40.7614, "lng": -73.9776, "hours": {"open": "10:30", "close": "17:30", "closed_days": []}, "nearest_stop": "5 Av/53 St", "lines": ["E", "M"], "walk_miles": 1.5},
+    {"id": "nyhistorical", "name": "New-York Historical Society", "borough": "Manhattan", "lat": 40.7791, "lng": -73.9740, "hours": {"open": "11:00", "close": "17:00", "closed_days": ["Monday"]}, "nearest_stop": "81 St-Museum of Natural History", "lines": ["B", "C"], "walk_miles": 1.2},
+    {"id": "transit-museum", "name": "New York Transit Museum", "borough": "Brooklyn", "lat": 40.6905, "lng": -73.9897, "hours": {"open": "10:00", "close": "16:00", "closed_days": ["Monday", "Tuesday"]}, "nearest_stop": "Borough Hall", "lines": ["2", "3", "4", "5"], "walk_miles": 1.0},
+    {"id": "morgan", "name": "Morgan Library & Museum", "borough": "Manhattan", "lat": 40.7493, "lng": -73.9817, "hours": {"open": "10:30", "close": "17:00", "closed_days": ["Monday"]}, "nearest_stop": "33 St", "lines": ["6"], "walk_miles": 1.0},
+    {"id": "mcny", "name": "Museum of the City of New York", "borough": "Manhattan", "lat": 40.7924, "lng": -73.9519, "hours": {"open": "10:00", "close": "17:00", "closed_days": ["Wednesday"]}, "nearest_stop": "103 St", "lines": ["6"], "walk_miles": 1.2}
+  ]
+}
