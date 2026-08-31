@@ -256,6 +256,18 @@ have recorded, with the honest n stated.
   needs prunes it, delays cost points, and the alert text is quoted on
   the card. City events come with no coordinates, so they fall back to
   per-borough default times, flagged as approximate.
+- **Weather is a gate at the extremes and evidence everywhere else.**
+  Dangerous conditions (thresholds in `src/config.py`, with units) remove
+  outdoor categories from a window in code, before any model call. Below
+  those extremes, weather shapes scores continuously through the agents:
+  every outdoor pack carries the hour-by-hour forecast as citable
+  evidence and the shared rubric anchors the 1-10 scale to conditions,
+  so a 45%-rain afternoon drags a festival toward a 5 while barely
+  touching a museum. In the committed traces, 83% of outdoor and nature
+  candidates reason about weather explicitly. There is deliberately no
+  code-side "rain minus N points" formula: weather's cost depends on the
+  activity, which is exactly the judgment the scoring agent exists to
+  make, and a flat penalty would double-count it.
 - **The model's score and the code's arithmetic never mix.** Agents
   output a raw 1-10. Everything after that (lifer bonus, soft-conflict
   penalty, transit) is a code-side adjustment with a label, and the final
