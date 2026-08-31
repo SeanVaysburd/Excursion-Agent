@@ -27,7 +27,11 @@ but it's a real tool. If you live in NYC you can run it as is.
 ```
 
 That's the whole setup. The example env file already points at the local
-model, and everything else has a working default.
+model, and everything else has a working default. One catch: the Ollama
+server must be running when you plan. The desktop app keeps it running in
+the background; if you installed the bare CLI (Homebrew), start it with
+`ollama serve` in another terminal first (or `brew services start ollama`
+to make it automatic). The startup probe tells you if it can't connect.
 
 Fair warning before you compare outputs: the local model is noticeably
 weaker than the committed Claude-produced samples. Same system, smaller
