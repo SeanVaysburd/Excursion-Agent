@@ -94,12 +94,7 @@ A domain grading looser than the others would show a systematically higher survi
 
 ## Acceptance and calibration
 
-- **Acceptance rate**: 0/1 suggestions accepted (0%). Small n; this metric matures with use.
-- **Calibration** (acceptance by the agent's own score for the suggestion):
-
-| agent score band | decided | accepted |
-|---|---|---|
-| under 6.0 | 1 | 0 |
+- No accept/pass decisions recorded yet. The capture mechanism ships in the UI (Accept/Pass on every suggestion card, POST /api/feedback); both metrics compute automatically from recorded decisions on the next evaluate run.
 
 ---
-Generated 2026-08-31T16:31:52-04:00 by scripts/evaluate.py; trajectory traces in `runs/`.
+Generated 2026-08-31T16:46:20-04:00 by scripts/evaluate.py; trajectory traces in `runs/`.
