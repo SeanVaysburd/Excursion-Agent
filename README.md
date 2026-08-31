@@ -222,6 +222,13 @@ committed matrix is anchored to it.
 - Season/type matching in memory is the Week-3 design: exact-match with a
   measured 0.55 cosine cutoff (see `docs/week3/` for the calibration
   bands and the margin).
+- **Adding your own feedback works today** — append an entry to
+  `data/excursions.json` (same fields as the samples) and the next run
+  reindexes it automatically (verified: a new kayaking note turned that
+  activity's cold start into a 0.75-similarity retrieval). One caveat: a
+  long-running API server must be restarted after a corpus edit (the
+  vector store's client is cached per process); `python demo.py` runs
+  always pick it up.
 - The S1 "rain" branch depends on the real forecast — by design. The
   committed rainy trace names its real date; run on a sunny day and you'll
   get the sunny plan. **That's the system working, not a bug.** Same for
@@ -279,4 +286,7 @@ outputs (labeled in its output) — distinct from the live agent runs here.
 ## Future work
 
 Google Calendar / CalDAV sync (today: bring an .ics), a real routing API
-behind the travel-matrix seam, per-site weather, and RRULE expansion.
+behind the travel-matrix seam, per-site weather, RRULE expansion, and an
+in-UI feedback capture flow ("rate this excursion" appending to the
+corpus — today feedback is added by editing `data/excursions.json`, which
+the next run picks up automatically).
