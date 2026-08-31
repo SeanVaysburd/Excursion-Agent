@@ -11,7 +11,7 @@ const SUGGESTIONS = [
   "Anything good on Sunday?",
 ];
 
-export default function AskTab() {
+export default function AskTab({ active = true }) {
   const [message, setMessage] = useState("");
   const [thread, setThread] = useState([]);
   const [busy, setBusy] = useState(false);
@@ -23,13 +23,15 @@ export default function AskTab() {
   useEffect(() => () => abortRef.current?.abort(), []);
 
   // New thread entries (or live progress) scroll into view; the input gets
-  // focus back once the agent is done.
+  // focus back once the agent is done. Both are no-ops while the tab is
+  // hidden, so they also re-run when it becomes visible again.
   useEffect(() => {
+    if (!active) return;
     endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-  }, [thread, liveRecords]);
+  }, [thread, liveRecords, active]);
   useEffect(() => {
-    if (!busy) inputRef.current?.focus();
-  }, [busy]);
+    if (!busy && active) inputRef.current?.focus();
+  }, [busy, active]);
 
   const submit = async (text) => {
     const q = (text || message).trim();

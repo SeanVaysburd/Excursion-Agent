@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { approve, getWeek, startWeek, watchRun } from "../api.js";
+import { approve, getRuns, getWeek, startWeek, watchRun } from "../api.js";
 import { DOW, num, titleCase } from "../helpers.js";
 import { Skeleton } from "./bits.jsx";
 import FeedbackModal from "./FeedbackModal.jsx";
@@ -203,10 +203,11 @@ export function WeekView({ plan }) {
   );
 }
 
-export default function WeekPlan() {
+export default function WeekPlan({ active = true }) {
   const [state, setState] = useState({ loading: true });
   const [liveRecords, setLiveRecords] = useState(null);
   const abortRef = useRef(null);
+  const watchingRef = useRef(null); // trace id currently being watched
 
   const load = () => {
     setState({ loading: true });
@@ -219,23 +220,44 @@ export default function WeekPlan() {
     return () => abortRef.current?.abort();
   }, []);
 
-  const runLive = async () => {
+  const watchLive = async (traceId) => {
+    watchingRef.current = traceId;
     abortRef.current = new AbortController();
     try {
-      const started = await startWeek();
       setLiveRecords([]);
-      const records = await watchRun(started.trace_id, setLiveRecords,
+      const records = await watchRun(traceId, setLiveRecords,
         { signal: abortRef.current.signal });
       const weekPlan = records.filter((r) => r.type === "weekly_plan").pop();
       setLiveRecords(null);
-      if (weekPlan) setState({ data: { source: "live", trace: started.trace_id, plan: weekPlan.plan } });
+      if (weekPlan) setState({ data: { source: "live", trace: traceId, plan: weekPlan.plan } });
       else load();
     } catch (error) {
-      if (error.aborted) return;
-      setLiveRecords(null);
+      if (!error.aborted) {
+        setLiveRecords(null);
+        setState((s) => ({ ...s, error: String(error.message || error) }));
+      }
+    }
+    watchingRef.current = null;
+  };
+
+  const runLive = async () => {
+    try {
+      const started = await startWeek();
+      await watchLive(started.trace_id);
+    } catch (error) {
       setState((s) => ({ ...s, error: String(error.message || error) }));
     }
   };
+
+  // When this tab is shown and a live WEEK run is in flight (started from
+  // any tab), attach so its progress shows here.
+  useEffect(() => {
+    if (!active) return;
+    getRuns().then((r) => {
+      const live = r.find((x) => x.live && x.scenario === "ui-week");
+      if (live && watchingRef.current !== live.id) watchLive(live.id);
+    }).catch(() => {});
+  }, [active]);
 
   if (state.loading) return <Skeleton h={120} n={3} />;
 

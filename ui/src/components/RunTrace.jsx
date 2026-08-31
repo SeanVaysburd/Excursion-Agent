@@ -88,20 +88,23 @@ const isFixture = (run) =>
   run.simulated || run.approval || run.escalated
   || /^ui-(approval|feedback)/.test(run.scenario || "");
 
-export default function RunTrace() {
+export default function RunTrace({ active = true }) {
   const [runs, setRuns] = useState(null);
   const [selected, setSelected] = useState(null);
   const [records, setRecords] = useState(null);
   const [filter, setFilter] = useState("");
   const [error, setError] = useState(null);
 
+  // Refresh the run list every time the tab is shown (new runs may have
+  // finished since); keep whatever run the user already selected.
   useEffect(() => {
+    if (!active) return;
     getRuns().then((r) => {
       setRuns(r);
-      const first = r.find((run) => !isFixture(run)) || r[0];
-      if (first) setSelected(first.id);
+      setSelected((current) =>
+        current || (r.find((run) => !isFixture(run)) || r[0])?.id || null);
     }).catch((e) => setError(String(e.message || e)));
-  }, []);
+  }, [active]);
   useEffect(() => {
     if (!selected) return;
     setRecords(null);

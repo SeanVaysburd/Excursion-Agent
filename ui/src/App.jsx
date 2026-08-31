@@ -69,10 +69,13 @@ export default function App() {
         </div>
       </header>
       <main>
-        {tab === 0 && <AskTab />}
-        {tab === 1 && <DayPlan />}
-        {tab === 2 && <WeekPlan />}
-        {tab === 3 && <RunTrace />}
+        {/* Tabs stay MOUNTED and are only hidden: an in-progress run (and
+            the Ask conversation) must survive switching tabs. Each tab
+            gets `active` so it can refresh or attach when shown. */}
+        <div className={tab === 0 ? "" : "tab-hidden"}><AskTab active={tab === 0} /></div>
+        <div className={tab === 1 ? "" : "tab-hidden"}><DayPlan active={tab === 1} /></div>
+        <div className={tab === 2 ? "" : "tab-hidden"}><WeekPlan active={tab === 2} /></div>
+        <div className={tab === 3 ? "" : "tab-hidden"}><RunTrace active={tab === 3} /></div>
       </main>
       <footer className="statusbar">
         <div className="statusbar-inner">

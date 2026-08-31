@@ -7,7 +7,7 @@ import FlowView from "./FlowView.jsx";
 import { WeatherIcon } from "./Icons.jsx";
 import PlanView from "./PlanView.jsx";
 
-export default function DayPlan() {
+export default function DayPlan({ active = true }) {
   const [state, setState] = useState({ loading: true });
   const [runs, setRuns] = useState([]);
   const [pinned, setPinned] = useState("");
@@ -15,6 +15,7 @@ export default function DayPlan() {
   const [logging, setLogging] = useState(false);
   const [savedNote, setSavedNote] = useState(null);
   const abortRef = useRef(null);
+  const watchingRef = useRef(null); // trace id currently being watched
 
   const load = (run) => {
     setState({ loading: true });
@@ -24,30 +25,52 @@ export default function DayPlan() {
   };
   useEffect(() => {
     load();
-    getRuns().then(setRuns).catch(() => {});
     return () => abortRef.current?.abort();
   }, []);
 
-  const runLive = async () => {
+  const watchLive = async (traceId) => {
+    watchingRef.current = traceId;
     abortRef.current = new AbortController();
     try {
-      const started = await startDay();
       setLiveRecords([]);
-      const records = await watchRun(started.trace_id, setLiveRecords,
+      const records = await watchRun(traceId, setLiveRecords,
         { signal: abortRef.current.signal });
       const dayPlan = records.filter((r) => r.type === "day_plan").pop();
       const summary = records.filter((r) => r.type === "run_summary").pop();
       setLiveRecords(null);
       if (dayPlan) {
-        setState({ data: { source: "live", trace: started.trace_id, plan: dayPlan.plan, summary } });
+        setState({ data: { source: "live", trace: traceId, plan: dayPlan.plan, summary } });
       } else load();
       getRuns().then(setRuns).catch(() => {});
     } catch (error) {
-      if (error.aborted) return;
-      setLiveRecords(null);
+      if (!error.aborted) {
+        setLiveRecords(null);
+        setState((s) => ({ ...s, error: String(error.message || error) }));
+      }
+    }
+    watchingRef.current = null;
+  };
+
+  const runLive = async () => {
+    try {
+      const started = await startDay();
+      await watchLive(started.trace_id);
+    } catch (error) {
       setState((s) => ({ ...s, error: String(error.message || error) }));
     }
   };
+
+  // Whenever this tab is shown: refresh the run list, and if a live DAY
+  // run is in flight (started from any tab, usually Ask), attach to it so
+  // its progress shows here instead of stale completed data.
+  useEffect(() => {
+    if (!active) return;
+    getRuns().then((r) => {
+      setRuns(r);
+      const live = r.find((x) => x.live && x.scenario === "ui-day");
+      if (live && watchingRef.current !== live.id) watchLive(live.id);
+    }).catch(() => {});
+  }, [active]);
 
   if (state.loading) return <Skeleton h={110} n={3} />;
 
