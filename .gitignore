@@ -26,3 +26,7 @@ ui/dist/
 .DS_Store
 *.log
 tmp-clone-test/
+
+# --- local dev tooling: not for reviewers -------------------------------
+.claude/
+*.bak
