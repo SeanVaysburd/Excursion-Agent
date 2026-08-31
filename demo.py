@@ -108,6 +108,39 @@ def print_call_summary(ctx: RunContext) -> None:
     print(f"  LLM calls: {dict(ctx.llm_calls)}")
 
 
+def print_weekly(plan) -> None:
+    print(f"\n=== WEEK PLAN starting {plan.week_start} " + "=" * 28)
+    if not plan.sets:
+        print("  no plannable days this week")
+        return
+    if plan.naive:
+        print("  NAIVE rank-by-sum (no critic):")
+        for pick in plan.naive.picks:
+            print(f"    {pick['date']}  {pick['name']}  [{pick['category']}] "
+                  f"{pick['final_score']:.1f}")
+        print(f"    base sum {plan.naive.base_sum:.1f}")
+    winner = plan.sets[0]
+    print("  ToT WINNER (critic-adjusted):")
+    for pick in winner.picks:
+        print(f"    {pick['date']}  {pick['name']}  [{pick['category']}] "
+              f"{pick['final_score']:.1f}")
+    print(f"    base {winner.base_sum:.1f} -> adjusted {winner.adjusted:.1f}  "
+          f"penalties {winner.penalties}")
+    print(f"    rationale: {winner.rationale}")
+    for alt in plan.sets[1:]:
+        print(f"  alt #{alt.rank}: adjusted {alt.adjusted:.1f} "
+              f"({', '.join(p['name'][:18] for p in alt.picks)})")
+    if plan.contrast.get("differing_days"):
+        print("  CONTRAST (naive vs ToT):")
+        for d in plan.contrast["differing_days"]:
+            print(f"    {d['date']}: naive={d['naive'][:30]} -> tot={d['tot'][:30]}")
+        print(f"    dominant penalty: {plan.contrast.get('dominant_penalty')}")
+    else:
+        print("  contrast: none this week (naive == ToT; reported honestly)")
+    print(f"  critic calls: {plan.critic_calls} (bound {plan.critic_bound}), "
+          f"arithmetic mismatches: {plan.critic_mismatches}")
+
+
 # --------------------------------------------------------------------------
 # Calendar freshness
 # --------------------------------------------------------------------------
@@ -201,8 +234,12 @@ async def run_scenario(name: str, ctx: RunContext, args) -> None:
             plan = await scenario_daily(ctx, logger, args)
             escalated = plan.escalated
         elif name == "S2":
-            from src.orchestration.tot_beam import run_weekly  # arrives in P5
-            await run_weekly(ctx, logger, args)
+            from src.orchestration.tot_beam import run_weekly
+            adapter = get_llm()
+            await probe(ctx)
+            weekly, _plans = await run_weekly(
+                ctx, adapter, logger, args.date, args.calendar, args.life_list)
+            print_weekly(weekly)
         elif name == "S3":
             plan = await scenario_daily(ctx, logger, args, extra_sites=[SEBAGO_SITE])
             escalated = plan.escalated

@@ -62,8 +62,14 @@ def test_bonus_formula_min_cap(count, expected):
     assert bonus(count) <= config.LIFER_BONUS_CAP
 
 
-def test_committed_life_lists_differ_by_exactly_the_two_demo_species():
+def test_committed_life_lists_are_the_s4_pair():
+    """The base list is a realistic ~150-species personal list (user's
+    calibration) that always lacks the two demo shorebirds; the full list
+    is the zero-lifers eval control."""
     base = load_life_list(config.DATA_DIR / "life_list.csv")
     full = load_life_list(config.DATA_DIR / "life_list_full.csv")
-    assert full - base == {"semplo", "shbdow"}
-    assert bonus(2) == 2.0  # the S4 expected visible bonus
+    assert len(base) == 150
+    assert {"semplo", "shbdow"}.isdisjoint(base)
+    assert {"semplo", "shbdow"} <= full
+    assert base < full  # strict subset: the control can never yield lifers
+    assert bonus(2) == 2.0 and bonus(50) == config.LIFER_BONUS_CAP

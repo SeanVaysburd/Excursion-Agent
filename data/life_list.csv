@@ -22,25 +22,19 @@ bkbplo,Black-bellied Plover
 bkbwar,Blackburnian Warbler
 bkcchi,Black-capped Chickadee
 bkpwar,Blackpoll Warbler
-blksco2,Black Scoter
 blkski,Black Skimmer
-blkter,Black Tern
 blkvul,Black Vulture
-blugrb1,Blue Grosbeak
 blujay,Blue Jay
 bnhcow,Brown-headed Cowbird
 boboli,Bobolink
 bongul,Bonaparte's Gull
 botgra,Boat-tailed Grackle
 brant,Brant
-brnowl,American Barn Owl
-brnpel,Brown Pelican
 brnthr,Brown Thrasher
 brwhaw,Broad-winged Hawk
 btbwar,Black-throated Blue Warbler
 btnwar,Black-throated Green Warbler
 bubsan,Buff-breasted Sandpiper
-budger,Budgerigar
 buggna,Blue-gray Gnatcatcher
 buwtea,Blue-winged Teal
 buwwar,Blue-winged Warbler
@@ -53,29 +47,22 @@ cedwax,Cedar Waxwing
 chispa,Chipping Sparrow
 chiswi,Chimney Swift
 chswar,Chestnut-sided Warbler
-chwwid,Chuck-will's-widow
 clarai11,Clapper Rail
 cliswa,Cliff Swallow
-comeid,Common Eider
-comgal1,Common Gallinule
 comgra,Common Grackle
 comloo,Common Loon
-commer,Common Merganser
 comnig,Common Nighthawk
 comrav,Common Raven
 comter,Common Tern
 comyel,Common Yellowthroat
-conwar,Connecticut Warbler
 coohaw,Cooper's Hawk
 dickci,Dickcissel
 doccor,Double-crested Cormorant
 dowwoo,Downy Woodpecker
 eargre,Eared Grebe
 easkin,Eastern Kingbird
-easowl1,Eastern Screech-Owl
 easpho,Eastern Phoebe
 eastow,Eastern Towhee
-easwpw1,Eastern Whip-poor-will
 eawpew,Eastern Wood-Pewee
 eawvir1,Eastern Warbling Vireo
 eursta,European Starling
@@ -86,13 +73,9 @@ gadwal,Gadwall
 gbbgul,Great Black-backed Gull
 gloibi,Glossy Ibis
 gnwtea,Green-winged Teal
-gowwar,Golden-winged Warbler
-gragoo,Graylag Goose
-graspa,Grasshopper Sparrow
 grbher3,Great Blue Heron
 grcfly,Great Crested Flycatcher
 greegr,Great Egret
-greshe,Great Shearwater
 greyel,Greater Yellowlegs
 grhowl,Great Horned Owl
 grnher,Green Heron
@@ -100,19 +83,15 @@ grycat,Gray Catbird
 gubter2,Gull-billed Tern
 haiwoo,Hairy Woodpecker
 herthr,Hermit Thrush
-hoowar,Hooded Warbler
-horlar,Horned Lark
 houfin,House Finch
 houspa,House Sparrow
 houwre,Northern House Wren
 hudgod,Hudsonian Godwit
 indbun,Indigo Bunting
-kenwar,Kentucky Warbler
 killde,Killdeer
 larspa,Lark Sparrow
 laugul,Laughing Gull
 lbbgul,Lesser Black-backed Gull
-leabit,Least Bittern
 leafly,Least Flycatcher
 leasan,Least Sandpiper
 leater1,Least Tern
@@ -145,9 +124,7 @@ ovenbi1,Ovenbird
 palwar,Palm Warbler
 pecsan,Pectoral Sandpiper
 perfal,Peregrine Falcon
-phivir,Philadelphia Vireo
 pibgre,Pied-billed Grebe
-pilwoo,Pileated Woodpecker
 pinwar,Pine Warbler
 pipplo,Piping Plover
 prawar,Prairie Warbler
@@ -156,7 +133,6 @@ rebwoo,Red-bellied Woodpecker
 redjun,Red Junglefowl
 redkno,Red Knot
 reevir1,Red-eyed Vireo
-rehwoo,Red-headed Woodpecker
 renpha,Red-necked Phalarope
 reshaw,Red-shouldered Hawk
 rethaw,Red-tailed Hawk
@@ -164,7 +140,6 @@ rewbla,Red-winged Blackbird
 ribgul,Ring-billed Gull
 robgro,Rose-breasted Grosbeak
 rocpig,Rock Pigeon
-roster,Roseate Tern
 royter1,Royal Tern
 rthhum,Ruby-throated Hummingbird
 ruckin,Ruby-crowned Kinglet
@@ -174,48 +149,3 @@ sander,Sanderling
 santer1,Sandwich Tern
 savspa,Savannah Sparrow
 scatan,Scarlet Tanager
-seaspa,Seaside Sparrow
-sedwre1,Sedge Wren
-semsan,Semipalmated Sandpiper
-shshaw,Sharp-shinned Hawk
-snoegr,Snowy Egret
-solsan,Solitary Sandpiper
-sonspa,Song Sparrow
-sora,Sora
-sposan,Spotted Sandpiper
-sstspa,Saltmarsh Sparrow
-stisan,Stilt Sandpiper
-sumtan,Summer Tanager
-swaspa,Swamp Sparrow
-swathr,Swainson's Thrush
-tenwar,Tennessee Warbler
-treswa,Tree Swallow
-triher,Tricolored Heron
-tuftit,Tufted Titmouse
-turvul,Turkey Vulture
-veery,Veery
-wessan,Western Sandpiper
-whbnut,White-breasted Nuthatch
-whevir,White-eyed Vireo
-whfibi,White-faced Ibis
-whimbr3,Hudsonian Whimbrel
-whrsan,White-rumped Sandpiper
-whtspa,White-throated Sparrow
-wilfly,Willow Flycatcher
-willet1,Willet
-wilsni1,Wilson's Snipe
-wiltur,Wild Turkey
-winwre3,Winter Wren
-wispet,Wilson's Storm-Petrel
-wlswar,Wilson's Warbler
-woewar1,Worm-eating Warbler
-wooduc,Wood Duck
-woothr,Wood Thrush
-ycnher,Yellow-crowned Night Heron
-yebcha,Yellow-breasted Chat
-yebcuc,Yellow-billed Cuckoo
-yebfly,Yellow-bellied Flycatcher
-yehbla,Yellow-headed Blackbird
-yelwar1,Northern Yellow Warbler
-yerwar,Yellow-rumped Warbler
-yetvir,Yellow-throated Vireo
