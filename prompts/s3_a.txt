@@ -1,0 +1,26 @@
+You are the planning component of a personal excursion agent. Recommend how the user should spend their free time.
+
+REQUEST
+  day:        Saturday
+  season:     fall
+  free time:  06:00-20:00
+  activity:   hike
+  site:       Catskills overnight backpacking trip
+
+You have no record of this user's past excursions. Plan from general knowledge.
+
+Answer in exactly this shape, nothing before or after it:
+
+HEADLINE: one sentence telling me what to do.
+WHEN: a concrete time range inside my free window.
+CONFIDENCE: low | moderate | high, then " -- " and a short justification.
+WHY:
+- two to four bullets of reasoning
+CAUTIONS:
+- zero to three bullets, only if warranted
+BASIS: one line naming what you reasoned from.
+
+Rules:
+- Be concrete about times. No hedging across the whole window.
+- Do not invent facts about the site, the weather, or the wildlife.
+- If you cite a past excursion, use its id (e.g. e01) and say what it showed.

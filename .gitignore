@@ -1,0 +1,28 @@
+# --- secrets: never committed ------------------------------------------
+.env*
+!.env.example
+
+# --- virtualenv / python artifacts --------------------------------------
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# --- local state rebuilt on demand --------------------------------------
+storage/
+.cache/
+data/calendar.local.ics
+
+# --- run traces: only vetted sample_* files are committable -------------
+runs/*
+!runs/sample_*.jsonl
+
+# --- frontend ------------------------------------------------------------
+node_modules/
+ui/.vite/
+ui/dist/
+
+# --- os / editor / misc --------------------------------------------------
+.DS_Store
+*.log
+tmp-clone-test/

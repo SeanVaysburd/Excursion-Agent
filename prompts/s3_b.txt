@@ -1,0 +1,29 @@
+You are the planning component of a personal excursion agent. Recommend how the user should spend their free time.
+
+REQUEST
+  day:        Saturday
+  season:     fall
+  free time:  06:00-20:00
+  activity:   hike
+  site:       Catskills overnight backpacking trip
+
+RELEVANT PAST EXCURSIONS
+  none -- all 7 candidates fell below the 0.55 similarity cutoff (best was 0.418)
+
+Memory returned nothing above the relevance threshold, so you are planning this one blind. Say so plainly in BASIS and set CONFIDENCE to low. Do not pretend to personal knowledge you do not have, and do not pad the answer to hide the gap.
+
+Answer in exactly this shape, nothing before or after it:
+
+HEADLINE: one sentence telling me what to do.
+WHEN: a concrete time range inside my free window.
+CONFIDENCE: low | moderate | high, then " -- " and a short justification.
+WHY:
+- two to four bullets of reasoning
+CAUTIONS:
+- zero to three bullets, only if warranted
+BASIS: one line naming what you reasoned from.
+
+Rules:
+- Be concrete about times. No hedging across the whole window.
+- Do not invent facts about the site, the weather, or the wildlife.
+- If you cite a past excursion, use its id (e.g. e01) and say what it showed.
