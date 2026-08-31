@@ -66,6 +66,7 @@ Rules:
 - reason: at most two sentences, grounded in cited evidence. Reasons are
   shown to the user; address them directly as "you" and "your" (their
   "8/10 spring visit" is "your 8/10 spring visit", never "this person's").
+  Plain punctuation only: commas and periods, no dashes of any kind.
 - evidence_ids: only ids that appear above; cite what the reason uses.
 - A high similarity on a past excursion means RELEVANT, not good. Its
   rating tells you how it went; learn from the bad ones too.

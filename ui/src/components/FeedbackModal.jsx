@@ -104,7 +104,9 @@ export default function FeedbackModal({ initial, onClose, onSaved }) {
         {error && <div className="callout warn">{error}</div>}
         <div className="row">
           <button className="btn quiet" onClick={onClose} disabled={busy}>Cancel</button>
-          <button className="btn primary" onClick={save} disabled={busy}>
+          <button className="btn primary" onClick={save}
+            disabled={busy || !form.site.trim()}
+            title={form.site.trim() ? undefined : "name the site or venue first"}>
             {busy ? "saving..." : "Save"}
           </button>
         </div>

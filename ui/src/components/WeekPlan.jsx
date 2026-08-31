@@ -264,12 +264,18 @@ export default function WeekPlan({ active = true }) {
   };
 
   // When this tab is shown and a live WEEK run is in flight (started from
-  // any tab), attach so its progress shows here.
+  // any tab), attach so its progress shows here. If nothing is live, a run
+  // may have finished while hidden: silently refetch, swapping state only
+  // when the trace changed.
   useEffect(() => {
     if (!active) return;
     getRuns().then((r) => {
       const live = r.find((x) => x.live && x.scenario === "ui-week");
       if (live && watchingRef.current !== live.id) watchLive(live.id);
+      else if (!live && !watchingRef.current) {
+        getWeek().then((data) => setState((s) =>
+          s.data?.trace === data.trace ? s : { data })).catch(() => {});
+      }
     }).catch(() => {});
   }, [active]);
 

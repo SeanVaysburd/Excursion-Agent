@@ -69,13 +69,20 @@ export default function DayPlan({ active = true }) {
 
   // Whenever this tab is shown: refresh the run list, and if a live DAY
   // run is in flight (started from any tab, usually Ask), attach to it so
-  // its progress shows here instead of stale completed data.
+  // its progress shows here instead of stale completed data. If nothing is
+  // live, an Ask run may have FINISHED for a different date while this tab
+  // was hidden: silently refetch the latest plan, swapping state only when
+  // the trace actually changed (no skeleton flash on plain tab switches).
   useEffect(() => {
     if (!active) return;
     getRuns().then((r) => {
       setRuns(r);
       const live = r.find((x) => x.live && x.scenario === "ui-day");
       if (live && watchingRef.current !== live.id) watchLive(live.id);
+      else if (!live && !pinned && !watchingRef.current) {
+        getDay().then((data) => setState((s) =>
+          s.data?.trace === data.trace ? s : { data })).catch(() => {});
+      }
     }).catch(() => {});
   }, [active]);
 

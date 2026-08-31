@@ -157,7 +157,8 @@ export default function RunTrace({ active = true }) {
               <span className="scen">{run.scenario}</span>
               {run.live && <span className="live-dot">● live</span>}
               {run.simulated && <span className="chip sim">simulated</span>}
-              <span className="fine"> {relTime(run.mtime)} · {run.records} records</span>
+              {run.escalated && <span className="chip sim">escalated</span>}
+              <span className="fine"> {relTime(run.mtime)} · {run.records} record{run.records === 1 ? "" : "s"}</span>
               <div className="id">{run.id}</div>
             </button>
           ))}

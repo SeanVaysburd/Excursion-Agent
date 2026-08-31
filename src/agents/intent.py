@@ -191,4 +191,9 @@ async def parse_request(
     if result.obj is None:
         return Intent(kind="clarify",
                       reply="I did not catch that. Which day should I plan?")
+    # Model text goes straight to the UI: hold it to the same no-dash house
+    # style as our own strings.
+    result.obj.reply = (result.obj.reply.replace(" — ", ", ")
+                        .replace("—", ", ").replace(" – ", ", ")
+                        .replace(" -- ", ", "))
     return validate(result.obj, today)

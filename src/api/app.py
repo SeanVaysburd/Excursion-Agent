@@ -183,7 +183,10 @@ class StartBody(BaseModel):
 
 
 async def _start_live(kind: str, body: StartBody) -> dict:
-    target = date.fromisoformat(body.date) if body.date else _next_saturday()
+    try:
+        target = date.fromisoformat(body.date) if body.date else _next_saturday()
+    except ValueError:
+        raise HTTPException(400, "date must be YYYY-MM-DD") from None
     async with _START_LOCK:
         if _live_busy():
             raise HTTPException(
@@ -221,7 +224,10 @@ async def _start_live(kind: str, body: StartBody) -> dict:
 async def api_day(date_: str | None = Query(None, alias="date"),
                   refresh: bool = False,
                   run: str | None = None) -> dict:
-    target = date.fromisoformat(date_) if date_ else _next_saturday()
+    try:
+        target = date.fromisoformat(date_) if date_ else None
+    except ValueError:
+        raise HTTPException(400, "date must be YYYY-MM-DD") from None
     if run:
         if not RUN_ID_RE.match(run):
             raise HTTPException(400, "bad run id")
@@ -230,8 +236,11 @@ async def api_day(date_: str | None = Query(None, alias="date"),
             raise HTTPException(404, "that run has no day plan")
         return {"source": "pinned", "trace": found["trace"],
                 "plan": found["record"]["plan"]}
-    found = _latest_record("day_plan", target.isoformat()) \
-        or _latest_record("day_plan")
+    # No explicit date means "whatever was planned most recently": the tab
+    # must follow an Ask run for any date, not stick to next Saturday.
+    found = (_latest_record("day_plan", target.isoformat())
+             or _latest_record("day_plan")) if target \
+        else _latest_record("day_plan")
     if not found and not refresh:
         raise HTTPException(
             404, "no completed day run yet. Press Run live, or use "
@@ -242,7 +251,7 @@ async def api_day(date_: str | None = Query(None, alias="date"),
     # Blocking refresh kept for curl users; the UI uses /api/day/start.
     trace_path = config.RUNS_DIR / (
         "ui_day_" + datetime.now(config.TZ).strftime("%Y%m%dT%H%M%S") + ".jsonl")
-    await _run_live("day", target, trace_path)
+    await _run_live("day", target or _next_saturday(), trace_path)
     found = _record_from(trace_path.stem, "day_plan")
     if not found:
         raise HTTPException(502, "live run produced no plan; see its trace")
@@ -359,12 +368,17 @@ class ApproveBody(BaseModel):
 
 
 def _write_approved(event: ApproveEvent) -> dict:
-    day = date.fromisoformat(event.date)
-    start_s, end_s = event.window.split("-")
-    start = datetime.combine(day, datetime.strptime(start_s, "%H:%M").time(),
-                             tzinfo=config.TZ)
-    end = datetime.combine(day, datetime.strptime(end_s, "%H:%M").time(),
-                           tzinfo=config.TZ)
+    try:
+        day = date.fromisoformat(event.date)
+        start_s, end_s = event.window.split("-")
+        start = datetime.combine(day, datetime.strptime(start_s, "%H:%M").time(),
+                                 tzinfo=config.TZ)
+        end = datetime.combine(day, datetime.strptime(end_s, "%H:%M").time(),
+                               tzinfo=config.TZ)
+    except ValueError:
+        raise HTTPException(
+            400, "bad event date or window (want YYYY-MM-DD and HH:MM-HH:MM)",
+        ) from None
     return calendar_write.append_event(
         config.DATA_DIR / "calendar.ics",
         f"Excursion: {event.name}", start, end, description=event.reason)
@@ -433,6 +447,8 @@ async def api_feedback(body: FeedbackBody) -> dict:
     except ValueError as exc:
         raise HTTPException(400, "bad date") from exc
     notes = body.notes.strip()[:600]
+    if not body.site.strip():
+        raise HTTPException(400, "name the site or venue; retrieval keys on it")
     if body.kind == "outing":
         if body.rating is None or not 1 <= body.rating <= 10:
             raise HTTPException(400, "an outing entry needs a rating from 1 to 10")
@@ -451,7 +467,7 @@ async def api_feedback(body: FeedbackBody) -> dict:
         "date": day.isoformat(),
         "season": season_of(day),
         "type": (body.type.strip()[:40] or "other"),
-        "site": (body.site.strip()[:80] or "unspecified"),
+        "site": body.site.strip()[:80],
         "notes": notes,
         "kind": body.kind,
         "source": "user",
