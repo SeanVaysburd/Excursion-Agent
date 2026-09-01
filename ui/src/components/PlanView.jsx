@@ -36,7 +36,7 @@ function DayTimeline({ plan }) {
           return (
             <div className="tl-seg pick"
               style={{ left: `${left * 100}%`, width: `${(right - left) * 100}%` }}
-              title={`top pick: ${topPick.base?.name}`}>
+              title={`top suggestion: ${topPick.base?.name}. Not on your calendar until you Add it.`}>
               <CategoryIcon candidate={topPick} size={13} /> {titleCase(topPick.base?.name)}
             </div>
           );
@@ -47,6 +47,10 @@ function DayTimeline({ plan }) {
           </span>
         ))}
       </div>
+      <p className="tl-legend">
+        striped = your calendar · tinted = free window · dashed pill = top
+        suggestion (nothing is booked until you press Add to calendar)
+      </p>
     </div>
   );
 }
@@ -214,7 +218,11 @@ export default function PlanView({ plan, summary, allowApprove = true }) {
                 onLog={(c) => setFeedback(feedbackInit(c, { kind: "outing" }))} />
             ))}
             {!((plan.slots || {})[w.label] || []).length && (
-              <p className="fine">no candidates cleared the gates for this window</p>
+              <p className="fine">
+                {(plan.gated || {})[w.label]
+                  ? "weather ruled out outdoor options for these hours, and no indoor venue is open then"
+                  : "nothing left for this window: each option is suggested once, in its earliest workable window, and museums keep daytime hours"}
+              </p>
             )}
           </div>
         </div>

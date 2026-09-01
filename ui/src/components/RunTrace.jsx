@@ -59,6 +59,8 @@ function headline(record) {
         + (record.error ? ` · ERROR: ${record.error}` : "");
     case "feedback":
       return `feedback saved · ${record.kind} · ${record.entry_id}`;
+    case "run_start":
+      return `run started · ${record.kind} · target ${record.date}`;
     default:
       return record.type;
   }

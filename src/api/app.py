@@ -143,6 +143,10 @@ async def _run_live(kind: str, target: date, trace_path: Path,
     try:
         logger = TrajectoryLogger(trace_path, ctx.run_id, f"ui-{kind}")
         ctx.log = logger.write
+        # First record carries the target so a tab attaching mid-run can
+        # say WHAT is being planned instead of headlining stale data.
+        logger.write({"type": "run_start", "kind": kind,
+                      "date": target.isoformat()})
         await probe(ctx, provider)
         escalated = False
         if kind == "day":

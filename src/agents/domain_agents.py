@@ -76,7 +76,8 @@ async def run_agent(
     An empty pack makes NO call and returns llm_result=None so the caller
     does not log a phantom llm_call record."""
     if not pack.candidates:
-        return AgentReport(candidates=[], self_report="no candidates to score"), None
+        why = "; ".join(pack.notes) or "no candidates fit today's free windows"
+        return AgentReport(candidates=[], self_report=why), None
 
     lines = pack.evidence_lines[:MAX_EVIDENCE_LINES]
     prompt = _prompt_from(pack, lines)

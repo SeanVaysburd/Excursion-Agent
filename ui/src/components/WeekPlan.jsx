@@ -281,11 +281,14 @@ export default function WeekPlan({ active = true }) {
 
   if (state.loading) return <Skeleton h={120} n={3} />;
 
+  const liveStart = (liveRecords || []).find((r) => r.type === "run_start");
   return (
     <div>
       <div className="pagehead">
         <h2>Week plan</h2>
-        {state.data && (
+        {liveRecords ? (
+          <span className="sub">planning the week of {liveStart?.date || "…"} now</span>
+        ) : state.data && (
           <span className="sub">week of {state.data.plan.week_start} · {state.data.trace}</span>
         )}
         <span className="spacer" />
@@ -305,7 +308,7 @@ export default function WeekPlan({ active = true }) {
           )}
         </div>
       )}
-      {state.data && <WeekView plan={state.data.plan} />}
+      {state.data && !liveRecords && <WeekView plan={state.data.plan} />}
     </div>
   );
 }

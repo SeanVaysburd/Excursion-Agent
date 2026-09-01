@@ -482,13 +482,15 @@ async def run_daily(
             await _memory_lines(ctx, season, "museum", venue["name"],
                                 time_of_day(windows[0].start), weekday, windows[0].label)
         )
+    indoor_empty_note = ""
     if not indoor_candidates:
         # Say WHY the indoor lane is empty (usually closed days or free
         # windows too short to overlap open hours), so an empty agent
         # output reads as hours logic, never as a silent filter bug.
-        plan.notes.append(
+        indoor_empty_note = (
             f"no indoor venue is open for at least {config.MIN_WINDOW_MINUTES} "
-            f"min inside any free window on {weekday}")
+            f"min inside any free window on {weekday}; museums keep daytime hours")
+        plan.notes.append(indoor_empty_note)
 
     def build_pack(domain: str, candidates: list[dict], lines: list[str],
                    memory_lines: list[str], sources: list[dict]) -> EvidencePack:
@@ -520,6 +522,8 @@ async def run_daily(
         "indoor": build_pack("indoor", indoor_candidates, indoor_lines,
                              indoor_memory, sources_common),
     }
+    if indoor_empty_note:
+        packs["indoor"].notes.append(indoor_empty_note)
 
     with _Timer() as t:
         agent_results = await asyncio.gather(

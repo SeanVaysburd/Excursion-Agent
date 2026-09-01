@@ -90,6 +90,9 @@ export default function DayPlan({ active = true }) {
 
   const plan = state.data?.plan;
   const summary = state.data?.summary;
+  // While attached to a live run, headline WHAT is being planned (from the
+  // trace's run_start record) instead of leaving stale plan data on top.
+  const liveStart = (liveRecords || []).find((r) => r.type === "run_start");
   // Demo surface: only clean, completed day plans belong in the picker.
   // Simulated forced-error and escalation fixtures stay in the Runs tab,
   // labeled, for the guardrail story.
@@ -98,8 +101,11 @@ export default function DayPlan({ active = true }) {
   return (
     <div>
       <div className="pagehead">
-        <h2>{plan ? `${plan.date} (${plan.weekday})` : "Day plan"}</h2>
-        {state.data && <span className="sub">{state.data.trace}</span>}
+        <h2>
+          {liveRecords ? `Planning ${liveStart?.date || "a new day"}…`
+            : plan ? `${plan.date} (${plan.weekday})` : "Day plan"}
+        </h2>
+        {state.data && !liveRecords && <span className="sub">{state.data.trace}</span>}
         <span className="spacer" />
         <button className="btn quiet" onClick={() => setLogging(true)}
           title="log an outing the agent never suggested; it becomes memory too">
@@ -135,7 +141,7 @@ export default function DayPlan({ active = true }) {
           run on. (click to dismiss)
         </div>
       )}
-      {plan && <PlanView plan={plan} summary={summary} />}
+      {plan && !liveRecords && <PlanView plan={plan} summary={summary} />}
       {logging && (
         <FeedbackModal initial={{ kind: "outing" }}
           onClose={() => setLogging(false)}
