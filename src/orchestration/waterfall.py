@@ -537,10 +537,12 @@ async def run_daily(
             report, error_note = None, f"{type(outcome).__name__}: {outcome}"
         else:
             report, llm_result = outcome
-            error_note = llm_result.error or ""
-            retried = llm_result.retried
-            logger.llm("agent", adapter.provider, 0, report is not None,
-                       llm_result.retried, llm_result.error)
+            error_note = (llm_result.error or "") if llm_result else ""
+            retried = bool(llm_result and llm_result.retried)
+            if llm_result is not None:  # None = empty pack, no call was made
+                logger.llm("agent", adapter.provider, llm_result.latency_ms,
+                           report is not None, llm_result.retried,
+                           llm_result.error)
         used_fallback = report is None
         if report is None:
             report = _fallback_report(domain, pack, error_note)

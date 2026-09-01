@@ -9,7 +9,7 @@ Live-verified parsing rules the naive reading gets wrong:
   language == "en" explicitly and never render the HTML variant.
 - Severity lives in the Mercury extension's alert_type; the exact-string
   mapping to prune/penalty/ignore is config.MTA_ALERT_ACTIONS.
-- Entity ids like "lmm:alert:265394:34" carry a churning sort suffix --
+- Entity ids like "lmm:alert:265394:34" carry a churning sort suffix;
   the evidence id keeps the stable prefix only.
 """
 

@@ -103,7 +103,7 @@ def compute(traces: dict[str, Path]) -> str:
         summary = next((r for r in reversed(recs) if r["type"] == "run_summary"), {})
         provider = summary.get("provider", "?")
         ebird_mode = ("live key" if (summary.get("calls_by_source", {}) or {}).get("ebird")
-                      else "keyless/cached")
+                      else "in-run cache")
         first_ts = recs[0]["ts"] if recs else "?"
         lines.append(f"| {tag} | `{path.name}` | {first_ts} | {provider} | {ebird_mode} |")
 

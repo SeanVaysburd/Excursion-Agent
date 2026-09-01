@@ -29,6 +29,7 @@ import asyncio
 import json
 import os
 import re
+import time
 from dataclasses import dataclass
 from typing import Callable
 
@@ -49,6 +50,7 @@ class LLMResult:
     error: str | None
     retried: bool
     provider: str
+    latency_ms: int = 0  # wall time across all attempts for this call
 
 
 def _strip_fences(text: str) -> str:
@@ -97,6 +99,7 @@ class LLMAdapter:
             error=retried.error if retried.obj is None else None,
             retried=True,
             provider=self.provider,
+            latency_ms=result.latency_ms + retried.latency_ms,
         )
 
     # -- internals ---------------------------------------------------------
@@ -105,16 +108,19 @@ class LLMAdapter:
     ) -> LLMResult:
         ctx.llm_calls[purpose] += 1
         ctx.llm_calls["total"] += 1
+        started = time.perf_counter()
         try:
             async with self._semaphore:
                 raw, obj, error = await asyncio.wait_for(
                     self._invoke(prompt, schema), timeout=self._timeout
                 )
+            result = LLMResult(obj, raw, error, False, self.provider)
         except asyncio.TimeoutError:
-            return LLMResult(None, "", f"timeout after {self._timeout}s", False, self.provider)
+            result = LLMResult(None, "", f"timeout after {self._timeout}s", False, self.provider)
         except Exception as exc:  # noqa: BLE001 - mapped to the fallback path
-            return LLMResult(None, "", f"{type(exc).__name__}: {exc}", False, self.provider)
-        return LLMResult(obj, raw, error, False, self.provider)
+            result = LLMResult(None, "", f"{type(exc).__name__}: {exc}", False, self.provider)
+        result.latency_ms = int((time.perf_counter() - started) * 1000)
+        return result
 
     async def _invoke(self, prompt: str, schema: type[BaseModel]):
         if self.provider == "ollama":

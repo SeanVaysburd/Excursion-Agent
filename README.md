@@ -20,10 +20,11 @@ but it's a real tool. If you live in NYC you can run it as is.
 ## Quickstart: free, no account, no API key
 
 ```
-1. Install Ollama (https://ollama.com) and run:  ollama pull llama3.1:8b
-2. python3 -m venv .venv && source .venv/bin/activate
-   && pip install -r requirements.txt
-3. cp .env.example .env && python demo.py
+ollama pull llama3.1:8b     # after installing Ollama from https://ollama.com
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env
+python demo.py
 ```
 
 That's the whole setup. The example env file already points at the local
@@ -307,7 +308,7 @@ have recorded, with the honest n stated.
   weather and model outputs are live. Memory's recency weight is
   anchored to the corpus rather than the clock for the same reason.
 
-## Synthetic data statement (course requirement)
+## Synthetic data statement
 
 Everything under [`data/`](data/) is synthetic and labeled where the
 format allows a label (an .ics or CSV cannot carry one, so this section
@@ -335,6 +336,9 @@ and the committed travel matrix is anchored to it.
 
 - One metro-wide forecast serves all sites. Harriman is about 40 miles
   out and its hours carry the same `wx:` evidence ids.
+- Each category is offered in its first ungated free window. On a day
+  with two free windows the second can sit empty even when something
+  could fit; a deliberate simplification, not a scheduling bug.
 - Recurring calendar events (RRULE) aren't expanded. The synthetic
   calendar doesn't use them; bring a flattened .ics.
 - Memory matching is the Week-3 design: exact season and type match with
@@ -409,7 +413,7 @@ same-process reindex that makes a new entry retrievable without a
 restart). Fixtures in unit tests are normal engineering; the no-replay
 honesty rule applies to the agent runtime.
 
-## Provenance and honesty (course requirement)
+## Provenance and honesty
 
 Committed sample traces are real runs. Each trace's run summary names its
 provider: the headline samples come from `claude-sdk`, plus labeled

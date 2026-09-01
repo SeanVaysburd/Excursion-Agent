@@ -97,7 +97,7 @@ export default function AskTab({ active = true }) {
             Where should your <span className="grad">free time</span> go?
           </h2>
           <p>
-            Ask about any day in the next 16 days (the reach of a real
+            Ask about any day in the next 16 days (the reach of a real weather
             forecast). It reads your calendar, checks live weather, birds,
             events and subway alerts, and remembers how your past trips
             actually went.

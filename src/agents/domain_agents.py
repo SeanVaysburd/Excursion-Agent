@@ -69,14 +69,14 @@ def _prompt_from(pack: EvidencePack, evidence_lines: list[str]) -> str:
 
 async def run_agent(
     adapter: LLMAdapter, ctx: RunContext, pack: EvidencePack
-) -> tuple[AgentReport | None, LLMResult]:
+) -> tuple[AgentReport | None, LLMResult | None]:
     """One structured call. On parse failure the retry SHRINKS the evidence
     pack (the realistic local-model failure is a truncated prompt), and a
-    second failure returns (None, result) for the caller's fallback path."""
+    second failure returns (None, result) for the caller's fallback path.
+    An empty pack makes NO call and returns llm_result=None so the caller
+    does not log a phantom llm_call record."""
     if not pack.candidates:
-        return AgentReport(candidates=[], self_report="no candidates to score"), LLMResult(
-            obj=None, raw="", error=None, retried=False, provider=adapter.provider
-        )
+        return AgentReport(candidates=[], self_report="no candidates to score"), None
 
     lines = pack.evidence_lines[:MAX_EVIDENCE_LINES]
     prompt = _prompt_from(pack, lines)

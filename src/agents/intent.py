@@ -173,7 +173,7 @@ def validate(intent: Intent, today: date) -> Intent:
                       reply=f"{intent.date} is in the past. Which upcoming day should I plan?")
     if target > hi:
         return Intent(kind="clarify",
-                      reply=(f"I can only plan with a real forecast, which reaches {hi}. "
+                      reply=(f"I can only plan with a real weather forecast, which reaches {hi}. "
                              f"Pick a day on or before then."))
     return intent
 

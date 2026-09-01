@@ -233,8 +233,8 @@ async def run_weekly(
                             fallback_taken=True)
             else:
                 verdict = outcome.obj
-                logger.llm("critic", adapter.provider, 0, True,
-                           outcome.retried, outcome.error)
+                logger.llm("critic", adapter.provider, outcome.latency_ms,
+                           True, outcome.retried, outcome.error)
             walk_delta = day_walk[f"{day.isoformat()}|{candidate.candidate_id}"]
             child, mismatch = expand(node, candidate, verdict, rng.random(),
                                      walk_delta)
