@@ -85,7 +85,7 @@ def expand(parent: BeamNode, candidate: ScoredCandidate, verdict: CriticVerdict,
 class WeeklySet(BaseModel):
     rank: int
     picks: list[dict]  # {date, candidate_id, name, category, final_score,
-    #                    walk_miles, transit_min}
+    #                    walk_miles, transit_min, window, confidence}
     base_sum: float
     adjusted: float
     transit_min: int
@@ -224,6 +224,11 @@ async def run_weekly(
             if isinstance(outcome, BaseException) or outcome.obj is None:
                 error = (str(outcome) if isinstance(outcome, BaseException)
                          else outcome.error)
+                if not isinstance(outcome, BaseException):
+                    # Same trace shape as a failed agent call: the llm_call
+                    # record exists with ok=False, then the fallback step.
+                    logger.llm("critic", adapter.provider, outcome.latency_ms,
+                               False, outcome.retried, outcome.error)
                 verdict = CriticVerdict(
                     variety_penalty=0.0, walking_penalty=0.0,
                     transit_fatigue_penalty=0.0,

@@ -9,12 +9,12 @@ simulated failures are stamped on every trace line.
 | tag | trace | first record | provider | eBird |
 |---|---|---|---|---|
 | S1 | `sample_S1_2026-09-05.jsonl` | 2026-08-31T15:41:36.568-04:00 | claude-sdk | live key |
-| S2 | `sample_S2_2026-09-05.jsonl` | 2026-08-31T15:45:23.534-04:00 | claude-sdk | in-run cache |
-| S3 | `sample_S3_2026-09-05.jsonl` | 2026-08-31T16:13:43.631-04:00 | claude-sdk | in-run cache |
-| S4 | `sample_S4_2026-09-05.jsonl` | 2026-08-31T16:16:39.038-04:00 | claude-sdk | in-run cache |
+| S2 | `sample_S2_2026-09-05.jsonl` | 2026-08-31T15:45:23.534-04:00 | claude-sdk | no eBird calls (keyless or cached) |
+| S3 | `sample_S3_2026-09-05.jsonl` | 2026-08-31T16:13:43.631-04:00 | claude-sdk | no eBird calls (keyless or cached) |
+| S4 | `sample_S4_2026-09-05.jsonl` | 2026-08-31T16:16:39.038-04:00 | claude-sdk | no eBird calls (keyless or cached) |
 | S4_control | `sample_S4_control_2026-09-05.jsonl` | 2026-08-31T16:24:15.563-04:00 | claude-sdk | live key |
-| S5 | `sample_S5_2026-09-05.jsonl` | 2026-08-31T16:18:56.310-04:00 | claude-sdk | in-run cache |
-| escalation | `sample_escalation_2026-09-05.jsonl` | 2026-08-31T16:27:18.881-04:00 | claude-sdk | in-run cache |
+| S5 | `sample_S5_2026-09-05.jsonl` | 2026-08-31T16:18:56.310-04:00 | claude-sdk | no eBird calls (keyless or cached) |
+| escalation | `sample_escalation_2026-09-05.jsonl` | 2026-08-31T16:27:18.881-04:00 | claude-sdk | no eBird calls (keyless or cached) |
 | forced_error_open-meteo | `sample_forced_error_open-meteo_2026-09-05.jsonl` | 2026-08-31T16:27:27.089-04:00 | claude-sdk | live key |
 | ollama_S1 | `sample_ollama_S1_2026-09-05.jsonl` | 2026-08-31T13:27:33.916-04:00 | ollama | live key |
 | ollama_S3 | `sample_ollama_S3_2026-09-05.jsonl` | 2026-08-31T12:39:48.550-04:00 | ollama | live key |
@@ -94,7 +94,7 @@ A domain grading looser than the others would show a systematically higher survi
 
 ## Acceptance and calibration
 
-- No accept/pass decisions recorded yet. The capture mechanism ships in the UI (Accept/Pass on every suggestion card, POST /api/feedback); both metrics compute automatically from recorded decisions on the next evaluate run.
+- No accept/pass decisions recorded yet. The capture mechanism ships in the UI (Pass on every suggestion card, and an accept is an Add to calendar with its optional note; both POST /api/feedback); the metrics compute automatically from recorded decisions on the next evaluate run.
 
 ---
-Generated 2026-08-31T20:03:26-04:00 by scripts/evaluate.py; trajectory traces in `runs/`.
+Generated 2026-09-02T14:14:07-04:00 by scripts/evaluate.py; trajectory traces in `runs/`.

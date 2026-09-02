@@ -273,8 +273,9 @@ export default function WeekPlan({ active = true }) {
       const live = r.find((x) => x.live && x.scenario === "ui-week");
       if (live && watchingRef.current !== live.id) watchLive(live.id);
       else if (!live && !watchingRef.current) {
+        const stem = (t) => (t || "").replace(/\.jsonl$/, "");
         getWeek().then((data) => setState((s) =>
-          s.data?.trace === data.trace ? s : { data })).catch(() => {});
+          stem(s.data?.trace) === stem(data.trace) ? s : { data })).catch(() => {});
       }
     }).catch(() => {});
   }, [active]);
@@ -287,7 +288,7 @@ export default function WeekPlan({ active = true }) {
       <div className="pagehead">
         <h2>Week plan</h2>
         {liveRecords ? (
-          <span className="sub">planning the week of {liveStart?.date || "…"} now</span>
+          <span className="sub">planning the week containing {liveStart?.date || "…"} now</span>
         ) : state.data && (
           <span className="sub">week of {state.data.plan.week_start} · {state.data.trace}</span>
         )}
@@ -299,7 +300,7 @@ export default function WeekPlan({ active = true }) {
         </button>
       </div>
       {liveRecords && <FlowView records={liveRecords} live mode="week" />}
-      {state.error && (
+      {state.error && !liveRecords && (
         <div className={state.data ? "callout warn" : "empty"}>
           {!state.data && <div className="big-ico"><CalendarIcon size={34} /></div>}
           <p className="fine">{state.error}</p>

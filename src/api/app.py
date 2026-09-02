@@ -253,8 +253,13 @@ async def api_day(date_: str | None = Query(None, alias="date"),
         return {"source": "latest_run", "trace": found["trace"],
                 "plan": found["record"]["plan"]}
     # Blocking refresh kept for curl users; the UI uses /api/day/start.
+    # Same one-at-a-time rule and same collision-proof name as live starts.
+    if _live_busy():
+        raise HTTPException(409, "a live run is already in progress; wait for "
+                                 "it to finish and try again")
     trace_path = config.RUNS_DIR / (
-        "ui_day_" + datetime.now(config.TZ).strftime("%Y%m%dT%H%M%S") + ".jsonl")
+        "ui_day_" + datetime.now(config.TZ).strftime("%Y%m%dT%H%M%S")
+        + f"_{uuid.uuid4().hex[:6]}.jsonl")
     await _run_live("day", target or _next_saturday(), trace_path)
     found = _record_from(trace_path.stem, "day_plan")
     if not found:
@@ -264,7 +269,7 @@ async def api_day(date_: str | None = Query(None, alias="date"),
 
 
 @app.get("/api/week")
-async def api_week(date_: str | None = None) -> dict:
+async def api_week() -> dict:
     found = _latest_record("weekly_plan")
     if found:
         return {"source": "latest_run", "trace": found["trace"],

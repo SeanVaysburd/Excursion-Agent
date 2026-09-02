@@ -80,8 +80,12 @@ export default function DayPlan({ active = true }) {
       const live = r.find((x) => x.live && x.scenario === "ui-day");
       if (live && watchingRef.current !== live.id) watchLive(live.id);
       else if (!live && !pinned && !watchingRef.current) {
+        // Compare trace ids with the .jsonl suffix stripped: live runs
+        // store the stem, GET /api/day returns the file name, and a raw
+        // compare would swap identical data (losing the run summary).
+        const stem = (t) => (t || "").replace(/\.jsonl$/, "");
         getDay().then((data) => setState((s) =>
-          s.data?.trace === data.trace ? s : { data })).catch(() => {});
+          stem(s.data?.trace) === stem(data.trace) ? s : { data })).catch(() => {});
       }
     }).catch(() => {});
   }, [active]);
@@ -128,7 +132,7 @@ export default function DayPlan({ active = true }) {
         </button>
       </div>
       {liveRecords && <FlowView records={liveRecords} live mode="day" />}
-      {state.error && (
+      {state.error && !liveRecords && (
         <div className={plan ? "callout warn" : "empty"}>
           {!plan && <div className="big-ico"><WeatherIcon size={34} /></div>}
           <p className="fine">{state.error}</p>

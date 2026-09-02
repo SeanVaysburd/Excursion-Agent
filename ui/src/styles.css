@@ -141,7 +141,6 @@ footer.statusbar {
 }
 .chip.neg { background: var(--warn-soft); color: var(--warn); }
 .chip.bad { background: var(--bad-soft); color: var(--bad); }
-.chip.accent { background: var(--accent-soft); color: var(--accent); }
 .chip.ev { font-family: var(--mono); font-weight: 500; cursor: pointer; }
 .chip.ev:hover { background: var(--accent-soft); color: var(--accent); }
 .chip.lifer { background: var(--ok-soft); color: var(--ok); }

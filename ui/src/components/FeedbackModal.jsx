@@ -11,7 +11,9 @@ import { StarIcon } from "./Icons.jsx";
 export default function FeedbackModal({ initial, onClose, onSaved }) {
   const kind = initial.kind || "outing";
   const [form, setForm] = useState({
-    date: initial.date || new Date().toISOString().slice(0, 10),
+    // Local date, not toISOString(): UTC would say "tomorrow" after ~8pm
+    // in this New-York-anchored app.
+    date: initial.date || new Date().toLocaleDateString("en-CA"),
     type: initial.type || "birding",
     site: initial.site || "",
     rating: initial.rating ?? 7,

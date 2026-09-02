@@ -242,6 +242,7 @@ async def run_scenario(name: str, ctx: RunContext, args) -> None:
             await probe(ctx)
             weekly, _plans = await run_weekly(
                 ctx, adapter, logger, args.date, args.calendar, args.life_list)
+            escalated = not weekly.sets  # zero plannable days = escalation
             print_weekly(weekly)
         elif name == "S3":
             plan = await scenario_daily(ctx, logger, args, extra_sites=[SEBAGO_SITE])

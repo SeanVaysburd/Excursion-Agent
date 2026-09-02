@@ -39,9 +39,6 @@ export const ShieldIcon = (p) => (
 export const FlagIcon = (p) => (
   <I {...p}><path d="M5 21V4" /><path d="M5 4h11l-2 3.5L16 11H5" /></I>
 );
-export const LayersIcon = (p) => (
-  <I {...p}><path d="M12 3l9 5-9 5-9-5z" /><path d="M3 13l9 5 9-5" /></I>
-);
 export const BranchIcon = (p) => (
   <I {...p}><circle cx="6" cy="5" r="2.2" /><circle cx="6" cy="19" r="2.2" />
     <circle cx="18" cy="12" r="2.2" />

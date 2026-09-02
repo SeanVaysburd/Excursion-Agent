@@ -49,6 +49,14 @@ def run_demo(extra: list[str]) -> int:
 
 def execute_suite(target: date) -> None:
     stamp = target.isoformat()
+    # The fully-blocked fixture only blocks one authored week; regenerate
+    # it onto the target week first (same regenerate-on-stale behavior as
+    # the main sample calendar) or the escalation step quietly finds a
+    # free day once that week has passed and the demo decays.
+    from scripts.make_sample_calendar import build_fully_blocked, monday_of, write
+    blocked = config.DATA_DIR / "calendar_fullyblocked.ics"
+    write(build_fully_blocked(monday_of(target)), blocked)
+    print(f"regenerated {blocked.name} onto the week of {monday_of(target)}")
     steps = [
         (["--scenario", "all", "--date", stamp, "--approve", "auto"], True),
         (["--scenario", "S4", "--date", stamp,
@@ -103,7 +111,7 @@ def compute(traces: dict[str, Path]) -> str:
         summary = next((r for r in reversed(recs) if r["type"] == "run_summary"), {})
         provider = summary.get("provider", "?")
         ebird_mode = ("live key" if (summary.get("calls_by_source", {}) or {}).get("ebird")
-                      else "in-run cache")
+                      else "no eBird calls (keyless or cached)")
         first_ts = recs[0]["ts"] if recs else "?"
         lines.append(f"| {tag} | `{path.name}` | {first_ts} | {provider} | {ebird_mode} |")
 
@@ -368,8 +376,9 @@ def compute(traces: dict[str, Path]) -> str:
                     lines.append(f"| {label} | {len(rows)} | {ok} |")
     else:
         lines.append("- No accept/pass decisions recorded yet. The capture "
-                     "mechanism ships in the UI (Accept/Pass on every "
-                     "suggestion card, POST /api/feedback); both metrics "
+                     "mechanism ships in the UI (Pass on every suggestion "
+                     "card, and an accept is an Add to calendar with its "
+                     "optional note; both POST /api/feedback); the metrics "
                      "compute automatically from recorded decisions on the "
                      "next evaluate run.")
 

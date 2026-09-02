@@ -5,9 +5,10 @@ and the video's Run Trace material, which is why the record types are a
 schema, not ad-hoc dicts. Every metric in eval/results.md reads ONLY these
 records. Every line passes through the redactor before it touches disk.
 
-Record types: run_start, step, llm_call, validation, prune, critic, escalation,
-approval, run_summary. Forced-error runs stamp injected_failure on EVERY
-line so a simulated outage can never masquerade as a real one.
+Record types: run_start, step, llm_call, agent_report, validation, prune,
+critic, escalation, approval, feedback, day_plan, weekly_plan, run_summary.
+Forced-error runs stamp injected_failure on EVERY line so a simulated
+outage can never masquerade as a real one.
 """
 
 from __future__ import annotations
