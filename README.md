@@ -146,15 +146,72 @@ scripts/            evaluate, calendar + life-list generators, week3 demos
 ### Demo Scenarios
 Other than running the full Excursion Agent, can run a few scenarios with demo.py from the command line python demo.py.
 
+## Evaluation
+
+Every metric is computed from the committed trajectory files in runs/, never asserted.
+Rerun the whole suite with python -m scripts.evaluate; results land in eval/results.md
+with the trace behind each number.
+
+Headline results (Claude provider, September 2026):
+- Weekly search: naive rank-by-sum 52.5 vs Tree-of-Thought 47.0. Three of seven days
+  flipped. The lower number is the better week: the critic prices repetition and
+  fatigue the naive sum ignores.
+- Groundedness: 1373 of 1373 evidence citations resolved to fetched records.
+  Two candidates were dropped for citing nothing; zero invented ids.
+- Hard-constraint violations: 0 of 51 final candidates. Critic calls: 72 against a
+  derived bound of 75, zero arithmetic mismatches.
+- Free local model: 263 of 263 valid citations, same guardrails; reasoning quality is
+  weaker, stated here rather than measured.
+
+Honest finding: the weekly run uses the authored synthetic week, chosen because it
+exercises the contrast. A live week may show no contrast; the eval says so when it happens.
+
+## Guardrails
+
+Evidence ids are constrained per call to this run's fetched records, then re-validated
+after generation. Final candidates are re-checked against calendar and weather gates.
+Agents self-report how their sources went; narrated trouble lowers confidence. A down
+source means a labeled fallback, never a silent one; there is no mock mode. Zero usable
+windows stops the run and asks. Exactly two write paths (calendar, feedback), both behind
+an explicit confirm. Secrets are redacted at every exit.
+
+## Tests
+
+tests/  76 offline tests: pytest
+
 ## Future work (improving on limitations)
 
 Google Calendar sync 
 
-per-site weather (currently it is per-county more general)
+Per-site weather (currently it is per-county more general)
 
-an air-quality gate
+An air-quality gate (sometimes air quality is low because of wildfires or other pollution and it's better to avoid going outside then)
 
-more realistic/sophisticated transit time calculations and data
+More realistic/sophisticated transit time calculations and data
+
+## Mapping design → code
+
+| Design decision (week) | Code |
+|---|---|
+| Waterfall: calendar, then weather gate, then agents, transit last (2) | `src/orchestration/waterfall.py` |
+| Hard vs soft calendar conflicts (2) | `src/tools/calendar_tool.py` |
+| Widen-the-search fallback (2) | `src/orchestration/waterfall.py` |
+| Short-term memory: fetch once, evidence registry (2) | `src/tools/base.py` |
+| Feedback RAG: top 7, re-rank, top 3, 0.55 cutoff (3) | `src/memory/retrieval.py` |
+| Accept/reject and 1-10 ratings feeding memory (1, 3) | `src/api/app.py` + `ui/src/components/FeedbackModal.jsx` |
+| Weekly ToT beam: width 4, depth 7, prune rules (4) | `src/orchestration/tot_beam.py` |
+| Critic penalties: variety, walking, transit (4) | `src/orchestration/tot_beam.py` |
+| Three domain agents + one shared 1-10 rubric (5) | `src/agents/domain_agents.py` + `src/agents/rubric.py` |
+| Score adjustments and top 3 per free window (2, 5) | `src/agents/pipeline.py` |
+| Day-or-week input check (6) | `src/agents/intent.py` |
+| Groundedness: every suggestion cites real evidence (6) | `src/agents/pipeline.py` + `src/safety/validators.py` |
+| Zero-calendar-conflict final check (6) | `src/safety/validators.py` |
+| Regex + sentiment pass over agent self-reports (6) | `src/safety/self_report.py` |
+| Read-only tools, rate limits, retry caps (6) | `src/tools/base.py` |
+| Log everything every run (6) | `src/safety/trajectory.py` |
+| Calendar write only after human approval (6) | `src/api/app.py` + `src/tools/calendar_write.py` |
+| Escalate when the day is fully booked (6) | `src/orchestration/waterfall.py` |
+| Metrics: groundedness, conflicts, calibration, fallbacks (6) | `scripts/evaluate.py` → `eval/results.md` |
 
 ## License
 
