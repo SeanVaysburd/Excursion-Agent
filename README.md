@@ -143,6 +143,8 @@ scripts/            evaluate, calendar + life-list generators, week3 demos
 | supervisor | code, deterministic | runs the waterfall, fans out the agents, owns the beam loop and every validator | [`src/orchestration/`](src/orchestration/) |
 | intent guardrail | code first, LLM fallback | turns free text into a validated day/week request, refuses out-of-horizon dates | [`src/agents/intent.py`](src/agents/intent.py) |
 
+### Demo Scenarios
+Other than running the full Excursion Agent, can run a few scenarios with demo.py from the command line python demo.py.
 
 ## Future work (improving on limitations)
 
