@@ -148,9 +148,13 @@ Other than running the full Excursion Agent, can run a few scenarios with demo.p
 
 ## Future work (improving on limitations)
 
-Google Calendar sync, 
+Google Calendar sync 
+
 per-site weather (currently it is per-county more general)
+
 an air-quality gate
+
+more realistic/sophisticated transit time calculations and data
 
 ## License
 
