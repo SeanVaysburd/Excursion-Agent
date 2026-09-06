@@ -97,9 +97,6 @@ export default function DayPlan({ active = true }) {
   // While attached to a live run, headline WHAT is being planned (from the
   // trace's run_start record) instead of leaving stale plan data on top.
   const liveStart = (liveRecords || []).find((r) => r.type === "run_start");
-  // Demo surface: only clean, completed day plans belong in the picker.
-  // Simulated forced-error and escalation fixtures stay in the Runs tab,
-  // labeled, for the guardrail story.
   const dayRuns = runs.filter((r) => r.has_day_plan && !r.simulated && !r.escalated);
 
   return (
