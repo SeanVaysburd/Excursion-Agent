@@ -1,8 +1,6 @@
-"""The SHARED scoring rubric (Week-5 grader-feedback fix): one prompt
+"""The shared scoring rubric: one prompt
 template with identical 1-10 anchors for all three domain agents; only the
-domain examples and the evidence differ. Score comparability across
-domains is the whole point, the waterfall ranks nature against events
-against museums on these numbers.
+domain examples and the evidence differ.
 """
 
 from __future__ import annotations
