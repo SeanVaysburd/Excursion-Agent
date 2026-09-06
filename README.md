@@ -148,32 +148,16 @@ Other than running the full Excursion Agent, can run a few scenarios with demo.p
 
 ## Evaluation
 
-Every metric is computed from the committed trajectory files in runs/, never asserted.
-Rerun the whole suite with python -m scripts.evaluate; results land in eval/results.md
-with the trace behind each number.
+Rerun the whole suite with python -m scripts.evaluate
+Results from a previous run are in eval/results.md
 
-Headline results (Claude provider, September 2026):
+Top level results:
 - Weekly search: naive rank-by-sum 52.5 vs Tree-of-Thought 47.0. Three of seven days
-  flipped. The lower number is the better week: the critic prices repetition and
+  flipped. The lower number is the better week as the critic takes into account repetition and
   fatigue the naive sum ignores.
 - Groundedness: 1373 of 1373 evidence citations resolved to fetched records.
   Two candidates were dropped for citing nothing; zero invented ids.
-- Hard-constraint violations: 0 of 51 final candidates. Critic calls: 72 against a
-  derived bound of 75, zero arithmetic mismatches.
-- Free local model: 263 of 263 valid citations, same guardrails; reasoning quality is
-  weaker, stated here rather than measured.
-
-Honest finding: the weekly run uses the authored synthetic week, chosen because it
-exercises the contrast. A live week may show no contrast; the eval says so when it happens.
-
-## Guardrails
-
-Evidence ids are constrained per call to this run's fetched records, then re-validated
-after generation. Final candidates are re-checked against calendar and weather gates.
-Agents self-report how their sources went; narrated trouble lowers confidence. A down
-source means a labeled fallback, never a silent one; there is no mock mode. Zero usable
-windows stops the run and asks. Exactly two write paths (calendar, feedback), both behind
-an explicit confirm. Secrets are redacted at every exit.
+- Hard-constraint violations: 0 of 51 final candidates, zero arithmetic mismatches.
 
 ## Tests
 
