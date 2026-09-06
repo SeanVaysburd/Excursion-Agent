@@ -1,5 +1,5 @@
-"""Branch isolation (Week-4 grader-feedback fix) and deterministic ToT
-mechanics, proven without any LLM: sibling branches structurally cannot
+"""Branch isolation and deterministic ToT
+mechanics: sibling branches structurally cannot
 contaminate each other, pruning follows the spec's two rules, and the
 variety-penalty mechanism flips a repetitive naive pick to a varied set.
 """
