@@ -1,9 +1,5 @@
-"""Domain agent callers: evidence pack in, one structured LLM call out.
-
-The orchestrator PRE-FETCHES all tool data and hands each agent a pack
-(design note for the README: pre-fetching is what makes the politeness
-batching enforceable, the spec's "one call + tools" is preserved
-semantically, the tools feed the call). Agents never touch the network.
+"""
+The orchestrator PRE-FETCHES all tool data.
 """
 
 from __future__ import annotations
@@ -15,7 +11,7 @@ from src.agents.rubric import build_prompt
 from src.agents.schemas import AgentReport, report_schema_for
 from src.tools.base import RunContext
 
-MAX_EVIDENCE_LINES = 80  # pack builders stay under this; shrink halves it
+MAX_EVIDENCE_LINES = 80
 
 
 @dataclass
