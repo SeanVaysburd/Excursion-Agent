@@ -1,7 +1,6 @@
 import React from "react";
 
-// Minimal stroke icon set, 24x24, currentColor. No emoji anywhere in the
-// product surface; these inherit text color so both themes just work.
+// Minimal stroke icon set, 24x24, currentColor
 
 function I({ children, size = 15, label }) {
   return (
