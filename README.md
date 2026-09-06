@@ -166,7 +166,7 @@ Top level results:
 
 ## Tests
 
-tests/  76 offline tests: pytest
+tests/  75 offline tests: pytest
 
 ## Future work (Improving on Limitations)
 
