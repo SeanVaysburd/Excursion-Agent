@@ -1,15 +1,5 @@
 """Self-report check: a regex/keyword pass plus a light negative-lexicon
 pass over each agent's self_report.
-
-Rationale (also in README): agents narrate their own tool failures --
-"no data came back, I assumed seasonal defaults", and narrated
-uncertainty should cost confidence even when every schema field validates.
-The adversarial threat model does not apply here (the agents are ours);
-this catches honest self-described degradation, not deception.
-
-The spec-mandated keyless-eBird sentence is whitelisted: it must appear in
-keyless runs by design, and letting it downgrade every nature report would
-silently collapse confidence across the whole domain.
 """
 
 from __future__ import annotations
