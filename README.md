@@ -173,6 +173,9 @@ An air-quality gate (sometimes air quality is low because of wildfires or other 
 
 More realistic/sophisticated transit time calculations and data
 
+Currently some of the data sources are overly scoped to NYC area, have to figure out an approach such as dynamic location-based event permit APIs to 
+add more regions more smoothly
+
 ## Mapping design → code
 
 | Design decision (week) | Code |
