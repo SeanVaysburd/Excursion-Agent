@@ -20,7 +20,7 @@ today's conditions, and shows the evidence behind every suggestion.
 ## Run it
 
 ```
-# terminal 1 (skip if you installed the Ollama desktop app):
+# terminal 1:
 ollama serve
 
 # terminal 2:
