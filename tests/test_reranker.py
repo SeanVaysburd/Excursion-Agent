@@ -1,7 +1,5 @@
-"""Retrieval mechanics: cosine round-trip, cutoff-before-rerank ordering,
-composite reordering, the calibration bands behind the 0.55 cutoff, and
-the corpus facts the demo scenarios depend on (S1's e02 citation, S3's
-cold start)."""
+"""Retrieval tests: cosine round-trip, cutoff-before-rerank ordering,
+composite reordering"""
 
 from __future__ import annotations
 
