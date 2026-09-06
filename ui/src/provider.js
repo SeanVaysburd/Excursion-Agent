@@ -1,7 +1,6 @@
 // Per-run model choice, persisted per browser. Empty string means the
 // server's .env default; the API receives a provider only when one is
-// explicitly chosen, and every trace's run summary records what actually
-// ran, so provenance stays honest whichever way the switch points.
+// explicitly chosen.
 export function getProvider() {
   try { return localStorage.getItem("ea-provider") || ""; } catch { return ""; }
 }
