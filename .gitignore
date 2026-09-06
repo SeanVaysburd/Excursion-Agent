@@ -27,6 +27,6 @@ ui/dist/
 *.log
 tmp-clone-test/
 
-# --- local dev tooling: not for reviewers -------------------------------
+# --- local dev
 .claude/
 *.bak
