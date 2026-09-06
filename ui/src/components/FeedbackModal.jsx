@@ -6,7 +6,6 @@ import { StarIcon } from "./Icons.jsx";
 // One modal for the two feedback kinds the memory learns from:
 //   outing   - "I did this, here is how it went" (rating 1-10 + notes)
 //   decision - "I'm passing on this suggestion" (reason only)
-// Saving is the explicit confirm; the backend refuses anything else.
 
 export default function FeedbackModal({ initial, onClose, onSaved }) {
   const kind = initial.kind || "outing";
