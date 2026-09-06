@@ -20,11 +20,14 @@ today's conditions, and shows the evidence behind every suggestion.
 ## Run it
 
 ```
-# terminal 1:
+First install Ollama from https://ollama.com (free, no account).
+
+```
+# terminal 1 (skip if you installed the Ollama desktop app):
 ollama serve
 
 # terminal 2:
-ollama pull llama3.1:8b (after installing ollama from ollama.com)
+ollama pull llama3.1:8b
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env
