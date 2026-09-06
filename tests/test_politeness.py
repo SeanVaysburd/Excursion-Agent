@@ -1,7 +1,4 @@
-"""Politeness wrapper: the six rules that keep this agent a good API
-citizen, proven against a stubbed transport (tests never touch the
-network, the no-fixture-replay rule binds the agent runtime, not unit
-tests)."""
+"""Testing API politeness"""
 
 from __future__ import annotations
 
