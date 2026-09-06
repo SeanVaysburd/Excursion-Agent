@@ -17,23 +17,24 @@ today's conditions, and shows the evidence behind every suggestion.
 
 ## Quickstart: free, no account, no API key
 
+## Run it
+
 ```
-ollama pull llama3.1:8b     # after installing Ollama from https://ollama.com
+# terminal 1 (skip if you installed the Ollama desktop app):
+ollama serve
+
+# terminal 2:
+ollama pull llama3.1:8b (after installing ollama from ollama.com)
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env
-python demo.py
+uvicorn src.api.app:app --host 127.0.0.1 --port 8000
+
+# terminal 3:
+cd ui && npm ci && npm run dev
 ```
 
-The example env file already points at the local
-model, and everything else has a working default. The Ollama
-server must be running when you plan. The desktop app keeps it running in
-the background; if you installed the bare CLI (Homebrew), start it with
-`ollama serve` in another terminal first (or `brew services start ollama`
-to make it automatic). The startup probe tells you if it can't connect.
-
-Keep in mind the local model is noticeably
-weaker than the committed Claude-produced samples.
+Open http://localhost:5173 and ask it to plan your day.
 
 The live data sources need network connectivity to work.
 
