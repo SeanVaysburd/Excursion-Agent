@@ -1,7 +1,4 @@
-"""Ask-surface guardrails, deterministic paths only (no LLM, no network).
-
-quick_parse handles the unambiguous phrasings in code; validate() is the
-horizon clamp that even the LLM path cannot get around.
+"""Ask guardrails.
 """
 
 from __future__ import annotations
