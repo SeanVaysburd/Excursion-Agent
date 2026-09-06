@@ -4,7 +4,7 @@ Two properties matter. The endpoint must refuse anything unconfirmed or
 malformed and must append in the corpus file's committed one-line-per-entry
 style. And a corpus edit must become retrievable IN THE SAME PROCESS,
 because the API server appends feedback and then plans again without
-restarting; that is exactly what the delete_collection rebuild exists for.
+restarting.
 """
 
 from __future__ import annotations
