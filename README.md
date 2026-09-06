@@ -19,20 +19,22 @@ today's conditions, and shows the evidence behind every suggestion.
 
 ## Run it
 
-```
 First install Ollama from https://ollama.com (free, no account).
 
-terminal 1 (skip if you installed the Ollama desktop app):
+```
+# terminal 1 (skip if you installed the Ollama desktop app):
 ollama serve
 
-terminal 2:
+# terminal 2:
+git clone https://github.com/SeanVaysburd/Excursion-Agent.git
+cd Excursion-Agent
 ollama pull llama3.1:8b
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env
-uvicorn src.api.app:app --host 127.0.0.1 --port 8000
+python -m uvicorn src.api.app:app --host 127.0.0.1 --port 8000
 
-terminal 3:
+# terminal 3 (from the same folder):
 cd ui && npm ci && npm run dev
 ```
 
