@@ -90,8 +90,6 @@ Same scores, surviving top-3 picks only (where the domains compete head to head)
 | nature | 18 | 7.8 | 6 | 9 |
 | outdoor_event | 9 | 8.0 | 7 | 9 |
 
-A domain grading looser than the others would show a systematically higher survivor mean; the shared anchor block in src/agents/rubric.py is what keeps these level.
-
 ## Acceptance and calibration
 
 - No accept/pass decisions recorded yet. The capture mechanism ships in the UI (Pass on every suggestion card, and an accept is an Add to calendar with its optional note; both POST /api/feedback); the metrics compute automatically from recorded decisions on the next evaluate run.
