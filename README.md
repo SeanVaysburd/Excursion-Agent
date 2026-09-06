@@ -51,7 +51,7 @@ The live data sources need network connectivity to work.
   and paste the printed token into `.env` as `CLAUDE_CODE_OAUTH_TOKEN=`.
   This uses your plan's included Agent SDK allowance to run Excursion Agent.
 - **Your location.** `HOME_LAT` and `HOME_LON` in `.env`. The default is
-  an approximate Brooklyn centroid, not anyone's address (see Privacy).
+  an approximate Brooklyn centroid, not anyone's address.
   It drives weather and bird-radius queries.
 - **Your birds.** A free `EBIRD_API_KEY` (ebird.org/api/keygen) can be used for
   live eBird sightings and the bird lifer bonus (scenario S4). Without it the
@@ -149,11 +149,11 @@ scripts/            evaluate, calendar + life-list generator
 | intent guardrail | code first, LLM fallback | turns free text into a validated day/week request, refuses out-of-horizon dates | [`src/agents/intent.py`](src/agents/intent.py) |
 
 ### Demo Scenarios
-Other than running the full Excursion Agent, can run a few scenarios with demo.py from the command line python demo.py.
+Other than running the full Excursion Agent, you can run a few scenarios with demo.py from the command line python demo.py. python demo.py --scenario S1 (through S5) runs one graded scenario from the command line and writes its trace to runs/
 
 ## Evaluation
 
-Rerun the whole suite with python -m scripts.evaluate
+It is possible to run the whole suite with python -m scripts.evaluate, this does take some time (over an hour depending on the model).
 Results from a previous run are in eval/results.md
 
 Top level results:
