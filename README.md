@@ -8,14 +8,11 @@ week and it runs a Tree-of-Thought search that knows three birding trips in
 one week is a worse week than birding plus a hike plus a museum, even when
 the raw scores say otherwise.
 
-The problem, in one line: free time gets spent by default instead of on
-purpose. Generic recommenders don't know you've already seen the warblers
+Free time often gets spent by default instead of on
+purpose. Generic recommenders (such as asking AI or Google search for generic things to do) don't know you've already seen the warblers
 at Prospect Park, that Jamaica Bay is miserable at midday, or that the B
 train is down this weekend. This agent plans from your own feedback and
 today's conditions, and shows the evidence behind every suggestion.
-
-Built as a graded course capstone (see the honesty section near the end),
-but it's a real tool. If you live in NYC you can run it as is.
 
 ## Quickstart: free, no account, no API key
 
@@ -27,25 +24,18 @@ cp .env.example .env
 python demo.py
 ```
 
-That's the whole setup. The example env file already points at the local
-model, and everything else has a working default. One catch: the Ollama
+The example env file already points at the local
+model, and everything else has a working default. The Ollama
 server must be running when you plan. The desktop app keeps it running in
 the background; if you installed the bare CLI (Homebrew), start it with
 `ollama serve` in another terminal first (or `brew services start ollama`
 to make it automatic). The startup probe tells you if it can't connect.
 
 Fair warning before you compare outputs: the local model is noticeably
-weaker than the committed Claude-produced samples. Same system, smaller
-model. The guardrails (evidence grounding, validators, fallbacks) don't
+weaker than the committed Claude-produced samples. The guardrails (evidence grounding, validators, fallbacks) don't
 depend on which model you pick, but the quality of the reasoning does.
-Expect a one-time 5 GB model download, and real fan noise while it thinks.
-On this path, your machine is the datacenter. Low-RAM machine? Set
-`OLLAMA_MODEL=llama3.2:3b` (or `gemma2:2b`) in `.env`; the same system
-runs on the smaller model and the quality warning above applies double.
 
-First-run notes: pip pulls the pinned scientific stack (a few GB, once),
-and the first plan downloads about 90 MB of embedding weights into
-`.cache/`. The live data sources need network.
+The live data sources need network connectivity to work.
 
 ### Make it yours (all optional)
 
@@ -59,8 +49,7 @@ and the first plan downloads about 90 MB of embedding weights into
   to start, so subscription auth can't quietly turn into metered billing.
 - **Your location.** `HOME_LAT` and `HOME_LON` in `.env`. The default is
   an approximate Brooklyn centroid, not anyone's address (see Privacy).
-  It drives weather and bird-radius queries. The travel-time matrix stays
-  the labeled sample either way; that seam is explained below.
+  It drives weather and bird-radius queries.
 - **Your birds.** A free `EBIRD_API_KEY` (ebird.org/api/keygen) unlocks
   live eBird sightings and the lifer bonus (scenario S4). Without it the
   nature agent runs on iNaturalist alone and says so in its own
@@ -72,11 +61,10 @@ and the first plan downloads about 90 MB of embedding weights into
   then Export. Hard events block time. Events marked tentative or
   optional (or carrying `X-SOFT:true`) stay plannable but cost a visible
   score penalty. Recurring events (RRULE) aren't expanded, so prefer a
-  flattened export. Live Google Calendar sync is future work. Without
-  your own file, the committed synthetic sample calendar is used: five
+  flattened export. Live Google Calendar sync will be added in the future. Without your own file, the committed synthetic sample calendar is used: five
   weeks of realistic blocks, regenerated onto the coming weeks with a
   printed notice whenever it goes stale.
-- **Your feedback.** The UI is the front door: every suggestion card has
+- **Your feedback.** Every suggestion card has
   **Pass** (with a quick why) and, after you take a trip, **Log this
   trip** with a 1-10 rating and a note. The Day tab's **Log an outing**
   covers trips the agent never suggested, and the accept dialog offers an
@@ -84,8 +72,6 @@ and the first plan downloads about 90 MB of embedding weights into
   `data/excursions.json` behind an explicit save, and the same server
   process retrieves it from the next run on. Editing the file by hand
   still works too (same fields as the samples; the next run reindexes).
-  Verified end to end: one added kayaking note turned that activity from
-  a cold start into a 0.75-similarity retrieval.
 
 ### The UI
 
@@ -94,30 +80,17 @@ uvicorn src.api.app:app --host 127.0.0.1 --port 8000     # backend
 cd ui && npm ci && npm run dev                            # http://localhost:5173
 ```
 
-Four tabs. **Ask** is the front door: type "what should I do saturday
+Four tabs. **Ask** type "what should I do saturday
 morning?" and an intent guardrail (deterministic parsing first, one
-validated LLM call only for fuzzy text) picks the day, refuses anything
-outside the 16-day forecast horizon, and asks back when the request is
-ambiguous; the run then streams live as an orchestration diagram whose
-nodes light up only when trace records prove them. **Day plan** shows the
-top 3 cards per free window: score breakdown, confidence badge, evidence
-chips, lifer badge, weather-gate flags, Add to calendar behind a confirm,
+validated LLM call only for unclear text) picks the day, refuses anything
+outside the 16-day weather forecast horizon, and asks back when the request is
+ambiguous; the run then streams live as an orchestration diagram. **Day plan** shows the top 3 cards per free window: score breakdown, confidence badge, evidence, lifer badge, weather-gate flags, Add to calendar behind a confirm,
 plus Pass and Log this trip feeding the memory. A run picker pins any
-committed clean run; test fixtures (simulated failures, the escalation
-calendar) stay out of this surface and live labeled in Runs. **Week
+committed clean run; tests (simulated failures, the escalation
+calendar) stay out of this and live labeled in Runs. **Week
 plan** shows the winning set, two collapsed alternates, the critic's
-penalties, the naive-vs-ToT comparison, and **Add week to calendar**: one
-confirm writes every pick. **Runs** renders any trace as the flow diagram
-plus an expandable timeline, including each agent's complete structured
-output (`agent_report` records). Day and Week load the latest completed
-run instantly; Run live starts a fresh one on a server task (one at a
-time; a second request gets a clear 409) and the UI polls the growing
-trace. A model switch in the header picks which provider runs the next
-live run (Claude on a subscription, or the local Ollama model); the
-choice rides along on each request and every trace's run summary records
-the provider that actually ran, so provenance survives the switch. Light
-and dark theme. Node is only needed for the UI. `pytest` runs the
-offline test suite with no network and no keys.
+penalties, and the naive-vs-ToT comparison. **Add week to calendar**: a
+confirm writes every pick for the week to the calendar. **Runs** renders any trace as the flow diagram plus an expandable timeline, including each agent's complete structured output (`agent_report` records). Day and Week load the latest completed run instantly; Run live starts a fresh one on a server task and the UI polls the growing trace. A model switch in the header picks which provider runs the next live run (Claude on a subscription, or the local Ollama model). Light and dark theme is also pickable in the top right.
 
 ### Don't want to run it?
 
@@ -125,12 +98,7 @@ Real committed output from real runs: sample trajectories in
 [`runs/`](runs/), computed metrics in [`eval/results.md`](eval/results.md)
 (groundedness, hard-constraint violations, escalation, forced-error
 degradation, fallback counts, per-stage latency, call accounting against
-the budget, critic-bound adherence, the naive-vs-ToT key result, the
-lifer on/off ablation, rubric consistency across domains, and acceptance
-rate + calibration from recorded decisions), screenshots in
-[`docs/screenshots/`](docs/screenshots/). The Week-3
-retrieval checkpoint (the memory layer's own demo and calibration) is in
-[`docs/week3/`](docs/week3/).
+the budget, critic-bound adherence, the naive-vs-ToT key result, rubric consistency across domains, and acceptance rate + calibration from recorded decisions).
 
 ## Architecture
 
@@ -179,7 +147,7 @@ eval/               computed results        docs/week3/  retrieval checkpoint
 scripts/            evaluate, calendar + life-list generators, week3 demos
 ```
 
-### Where each course checkpoint lives
+### Course Checkpoints
 
 | checkpoint | design item | implementation |
 |---|---|---|
@@ -235,80 +203,7 @@ table shows no domain drifts stricter or looser) and acceptance-rate and
 calibration sections computed from whatever accept/pass decisions you
 have recorded, with the honest n stated.
 
-## Design decisions, and why
-
-- **No CrewAI, no MCP, no OAuth, no scraping.** The orchestration is
-  plain async Python on purpose. The waterfall and the beam search are
-  the design; a framework would just be in the way. (You'll see `mcp` in
-  the lockfile. That's the Agent SDK's internal transport protocol, not
-  agent-coordination architecture.)
-- **Two providers: `ollama` (free) and `claude-sdk` (subscription).** The
-  original stack sketch named the metered `langchain-anthropic` API path.
-  We dropped it on purpose at the dependency gate, for cost: reviewers
-  run free, or on a subscription they already pay for. The factory in
-  `src/agents/llm.py` is one adapter, and adding a provider back is about
-  thirty lines.
-- **Agents don't call tools. Tools feed agents.** The orchestrator
-  fetches everything through one polite wrapper and hands each agent an
-  evidence pack. That's what makes the rate-limit discipline enforceable,
-  keeps the local model offline by construction, and lets each call's
-  schema restrict citations to evidence that actually exists.
-- **Transit is a static matrix plus live alerts.** A full GTFS routing
-  engine is out of scope. Base minutes come from
-  [`data/travel_times.json`](data/travel_times.json) behind one swappable
-  function ([`src/tools/travel_matrix.py`](src/tools/travel_matrix.py)).
-  Live MTA alerts are fetched each run: a suspension on a line your trip
-  needs prunes it, delays cost points, and the alert text is quoted on
-  the card. City events come with no coordinates, so they fall back to
-  per-borough default times, flagged as approximate.
-- **Weather is a gate at the extremes and evidence everywhere else.**
-  Dangerous conditions (thresholds in `src/config.py`, with units) remove
-  outdoor categories from a window in code, before any model call. Below
-  those extremes, weather shapes scores continuously through the agents:
-  every outdoor pack carries the hour-by-hour forecast as citable
-  evidence and the shared rubric anchors the 1-10 scale to conditions,
-  so a 45%-rain afternoon drags a festival toward a 5 while barely
-  touching a museum. In the committed traces, 83% of outdoor and nature
-  candidates reason about weather explicitly. There is deliberately no
-  code-side "rain minus N points" formula: weather's cost depends on the
-  activity, which is exactly the judgment the scoring agent exists to
-  make, and a flat penalty would double-count it.
-- **The model's score and the code's arithmetic never mix.** Agents
-  output a raw 1-10. Everything after that (lifer bonus, soft-conflict
-  penalty, transit) is a code-side adjustment with a label, and the final
-  score is clamped. The UI chips and the trace show exactly who added
-  what.
-- **One rubric, three specialists.** The parallel domain agents could
-  quietly drift into different strictness and let one domain always win.
-  The guard is a single shared 1-10 anchor block injected verbatim into
-  all three prompts ([`src/agents/rubric.py`](src/agents/rubric.py));
-  only the few-shot examples that translate "a 9" into each domain's
-  terms differ, and every post-score adjustment is code-side and
-  identical. `eval/results.md` carries the per-domain score table that
-  shows the scale holding.
-- **Groundedness is enforced twice.** Each call's schema types the
-  evidence ids as a literal enum of what was actually fetched this run
-  (the local model's grammar decoder physically can't cite anything
-  else), and a validator re-checks membership afterward. The metric
-  counts everything the agents emitted before stripping; measuring after
-  the strip would make 100% meaningless.
-- **Fallbacks are always visible, never silent.** Every degradation
-  (a down source, a widened radius, a parser failure) lands in the
-  trace as a labeled fallback step and costs stated confidence; there
-  is no mock or canned-response mode anywhere, because an unlabeled
-  stand-in would undermine every claim the trace makes.
-- **The Ask tab is a build-time addition** to the frozen three-tab
-  spec, in the same spirit as `sites.json`: a thin natural-language
-  router ([`src/agents/intent.py`](src/agents/intent.py)) into exactly
-  the same waterfall and ToT runs the buttons start, with the same
-  input check. No parallel planning path exists behind it.
-- **Reproducibility, stated plainly.** Beam results are deterministic
-  given the same critic verdicts: ordered expansion, a total sort key,
-  a seeded tie-break. They aren't reproducible across days, because
-  weather and model outputs are live. Memory's recency weight is
-  anchored to the corpus rather than the clock for the same reason.
-
-## Synthetic data statement
+## Synthetic data
 
 Everything under [`data/`](data/) is synthetic and labeled where the
 format allows a label (an .ics or CSV cannot carry one, so this section
@@ -356,21 +251,6 @@ and the committed travel matrix is anchored to it.
   logic for S2: if a given week's live data produces no naive-vs-ToT
   contrast, `eval/results.md` says so, and the fix is trying another
   week.
-
-## API politeness
-
-One shared wrapper enforces all of it: per-source minimum intervals
-(iNaturalist far under its 60/min), in-run caching with single-flight
-coalescing so concurrent agents can't stampede a miss, at most two
-retries on network errors and 5xx only (never 4xx), circuit-breaking a
-source for the rest of the run on a 429, batch-by-design fetching (one
-weather call per run covers 16 days; two eBird calls (recent plus
-notable) and one iNaturalist call per site region), a custom User-Agent, and a hostname allowlist that
-raises on anything undocumented. Per-source call counts print at the end
-of every run and land in each trace's run summary. A config ceiling flags
-runaway designs instead of raising limits. The same discipline covers LLM
-calls: per-provider concurrency caps, counted per run, checked against
-the beam-search bound in eval.
 
 ## Safety layer
 
