@@ -1,11 +1,6 @@
 """
 Long-term memory for the excursion-planning agent.
 
-This is the ONLY retrieval component in the agent. The structured feeds it
-also uses, weather, eBird, transit, calendar, are ordinary API calls and
-have no place here. What lives here is the part that is free text and can
-only be queried semantically: the user's own notes on past excursions.
-
 Pipeline
     data/excursions.json
       -> one llama_index Document per entry (notes in the body, the rest in
