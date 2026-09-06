@@ -89,6 +89,5 @@ Same scores, surviving top-3 picks only (where the domains compete head to head)
 | indoor | 3 | 8.0 | 8 | 8 |
 | nature | 18 | 7.8 | 6 | 9 |
 | outdoor_event | 9 | 8.0 | 7 | 9 |
-
 ---
 Generated 2026-09-02T14:14:07-04:00 by scripts/evaluate.py; trajectory traces in `runs/`.
