@@ -1,4 +1,4 @@
-"""The ONE place LLMs are constructed. Two providers behind one adapter:
+"""Two providers behind one adapter:
 
   ollama      (quickstart default) ChatOllama, grammar-constrained
               json_schema structured output, free, local
