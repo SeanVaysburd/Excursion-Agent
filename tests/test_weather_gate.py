@@ -1,5 +1,4 @@
-"""Weather gate over synthetic hourly payloads, the rain logic is proven
-here regardless of what the live forecast does on demo day."""
+"""Weather gate"""
 
 from __future__ import annotations
 
