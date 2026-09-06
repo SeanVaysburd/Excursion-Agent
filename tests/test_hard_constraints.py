@@ -1,4 +1,4 @@
-"""Hard-constraint validator""
+"""Hard-constraint validator"""
 
 from __future__ import annotations
 
