@@ -1,5 +1,4 @@
-"""Self-report scanner: spec keywords fire raw, lexicon additions respect
-negation, and the mandated keyless-eBird sentence stays whitelisted."""
+"""Self-report"""
 
 from __future__ import annotations
 
