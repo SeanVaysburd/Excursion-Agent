@@ -168,18 +168,15 @@ Top level results:
 
 tests/  76 offline tests: pytest
 
-## Future work (improving on limitations)
+## Future work (Improving on Limitations)
 
-Google Calendar sync 
+Right now there is one forecast for the whole region, the next step will be more granular per-site forecasts where possible. 
 
-Per-site weather (currently it is per-county more general)
+Calendar input is an exported .ics calendar file right now, the next step will be a live Google Calendar sync (mainly have to figure out how to do this securely).
 
-An air-quality gate (sometimes air quality is low because of wildfires or other pollution and it's better to avoid going outside then)
+There is no air-quality gate, any wildfire or other pollution day should cause no outdoor event even if no storm and sunny. This requires getting an additional API and layering this logic into the waterfall.
 
-More realistic/sophisticated transit time calculations and data
-
-Currently some of the data sources are overly scoped to NYC area, have to figure out an approach such as dynamic location-based event permit APIs to 
-add more regions more smoothly
+Currently travel times are static and adjusted by subway alerts (right now only for NYC). The next step would be to have a more sophisticated API that can calculate realtime travel times (maybe something like Google Maps).
 
 ## Mapping design → code
 
