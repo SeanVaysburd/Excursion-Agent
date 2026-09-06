@@ -36,17 +36,19 @@ export const sendFeedback = (body) => post("/api/feedback", { ...body, confirmed
 // signal (pass one from the mounting component) stops the poll cleanly,
 // and the deadline keeps a stalled run from polling forever.
 export async function watchRun(traceId, onTick, options = {}) {
-  const { intervalMs = 1500, timeoutMs = 15 * 60 * 1000, signal } = options;
-  const started = Date.now();
+  const { intervalMs = 1500, staleMs = 60 * 1000, signal } = options;
+  // No wall-clock deadline: a weekly plan on the local model can run for an
+  // hour, and a finished run must land in the UI however long it took. The
+  // only way out without a result is proof the run DIED: no new records for
+  // a while AND the server no longer lists it as live (a restart killed the
+  // task before it could write its summary).
+  let lastCount = -1;
+  let quietSince = Date.now();
   for (;;) {
     if (signal?.aborted) {
       const err = new Error("stopped watching");
       err.aborted = true;
       throw err;
-    }
-    if (Date.now() - started > timeoutMs) {
-      throw new Error(
-        "the run did not finish within 15 minutes; its trace is in the Runs tab");
     }
     try {
       const records = await getRun(traceId);
@@ -54,7 +56,22 @@ export async function watchRun(traceId, onTick, options = {}) {
       // would blank the flow diagram until the next beat (visible blink).
       if (!signal?.aborted) onTick(records);
       if (records.some((r) => r.type === "run_summary")) return records;
-    } catch {
+      if (records.length !== lastCount) {
+        lastCount = records.length;
+        quietSince = Date.now();
+      } else if (Date.now() - quietSince > staleMs) {
+        const listed = (await getRuns()).find((r) => r.id === traceId);
+        if (listed && !listed.live) {
+          const err = new Error(
+            "that run stopped before finishing (the server may have restarted); "
+            + "its partial trace is in the Runs tab");
+          err.dead = true;
+          throw err;
+        }
+        quietSince = Date.now(); // still alive, just thinking; keep waiting
+      }
+    } catch (error) {
+      if (error.dead) throw error;
       // file may not exist for the first beat, or the proxy hiccuped;
       // keep the last good view and try again
     }
