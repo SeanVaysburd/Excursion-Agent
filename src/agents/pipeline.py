@@ -1,8 +1,7 @@
 """The ordered post-processing pipeline between an agent's structured
 output and the candidates the planner may actually show.
 
-Order is load-bearing and fixed (plan decision closing the biggest critic
-finding):
+Order is fixed:
 
   1 groundedness      strip invented ids / drop ungrounded candidates
   2 cold-start        confidence override when memory had nothing
