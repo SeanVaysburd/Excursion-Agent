@@ -1,7 +1,7 @@
 [project]
 name = "excursion-agent"
 version = "1.0.0"
-description = "Personal excursion-planning agent (course capstone): waterfall daily planner + Tree-of-Thought weekly scheduler with semantic memory over past excursion feedback"
+description = "Personal excursion-planning agent"
 requires-python = ">=3.11"
 
 [tool.pytest.ini_options]
