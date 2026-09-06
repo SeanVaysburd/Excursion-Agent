@@ -1,5 +1,5 @@
 """
-The uniform tool contract and the ONE place API politeness is enforced.
+The uniform tool contract and the place API politeness is enforced.
 
 Every external data source goes through `fetch()` on a `RunContext`. That
 single chokepoint is what makes the politeness rules real instead of
