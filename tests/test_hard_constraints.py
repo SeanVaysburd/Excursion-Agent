@@ -1,5 +1,4 @@
-"""Hard-constraint validator: the 0-violations headline metric must be
-falsifiable, so here are the two ways to violate it."""
+"""Hard-constraint validator""
 
 from __future__ import annotations
 
