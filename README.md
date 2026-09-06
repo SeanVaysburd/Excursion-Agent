@@ -133,8 +133,8 @@ src/tools/          one polite wrapper + the seven API tools, calendar
 src/safety/         validators, self-report scan, redaction, trajectory log
 src/api/            FastAPI backend        ui/          React frontend
 data/               synthetic inputs (labeled)           runs/   trajectories
-eval/               computed results        docs/week3/  retrieval checkpoint
-scripts/            evaluate, calendar + life-list generators, week3 demos
+eval/               computed results        retrieval checkpoint
+scripts/            evaluate, calendar + life-list generator
 ```
 
 ### The agents
