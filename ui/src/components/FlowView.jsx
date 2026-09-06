@@ -96,10 +96,6 @@ function Node({ node, onClick }) {
 
 export default function FlowView({ records, live = false, onSelect, mode }) {
   const finished = records.some((r) => r.type === "run_summary");
-  // A caller that KNOWS what it is watching says so via mode ("day" |
-  // "week"); the record heuristic is only for finished traces of unknown
-  // kind, because a weekly run's first day is indistinguishable from a
-  // daily run and the diagram must not flip identities mid-run.
   const weekly = mode
     ? mode === "week"
     : records.some((r) => r.type === "critic" || r.type === "weekly_plan")
