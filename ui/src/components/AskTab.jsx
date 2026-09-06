@@ -23,12 +23,6 @@ export default function AskTab({ active = true }) {
 
   useEffect(() => () => abortRef.current?.abort(), []);
 
-  // New thread entries (or a live run starting/ending) scroll into view;
-  // the input gets focus back once the agent is done. Both are no-ops
-  // while the tab is hidden, so they also re-run when it becomes visible.
-  // Keyed on WHETHER a live view exists, not its contents: every poll
-  // tick delivers a fresh records array, and force-scrolling on each one
-  // would yank the page away from wherever the user scrolled.
   const liveShowing = liveRecords !== null;
   useEffect(() => {
     if (!active) return;
