@@ -96,8 +96,8 @@ LIFER_BONUS_CAP = 2.5  # min(CAP, BASE + PER * lifer_count)
 FINAL_SCORE_MIN, FINAL_SCORE_MAX = 0.0, 10.0
 
 # --------------------------------------------------------------------------
-# Memory (Week-3 module; calibrated on the 20-entry corpus, see
-# scripts/week3/calibrate.py before changing)
+# Memory (calibrated on the 20-entry corpus; the cutoff is measured,
+# not guessed)
 # --------------------------------------------------------------------------
 SIMILARITY_CUTOFF = 0.55
 

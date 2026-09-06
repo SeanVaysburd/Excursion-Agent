@@ -76,8 +76,7 @@ TOP_K = 3  # returned to the planner, after re-ranking
 #
 # With the pre-filter gone this cutoff is the ONLY guard against a cold start
 # being answered from the wrong notes. Re-run calibrate.py on real data.
-# Single source of truth is src/config.py; re-exported here because the
-# Week-3 scripts (and the calibration evidence) import it from this module.
+# Single source of truth is src/config.py.
 SIMILARITY_CUTOFF = config.SIMILARITY_CUTOFF
 
 # Composite re-ranking. Similarity dominates, the other three are nudges

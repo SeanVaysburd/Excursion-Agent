@@ -95,6 +95,6 @@ def test_calibration_bands_still_separate_at_cutoff(memory):
     cold_best = memory.retrieve(ctx(*COLD)).candidates[0].similarity
     assert genuine_best > SIMILARITY_CUTOFF > cold_best, (
         f"bands crossed the cutoff: genuine={genuine_best:.3f}, "
-        f"cold={cold_best:.3f}, re-run scripts/week3/calibrate.py"
+        f"cold={cold_best:.3f}, recalibrate the cutoff"
     )
     assert config.SIMILARITY_CUTOFF == SIMILARITY_CUTOFF  # single source

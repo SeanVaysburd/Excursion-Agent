@@ -127,7 +127,7 @@ Switching models between local and Claude and Light vs Dark theme are also picka
 src/agents/         domain agents, shared rubric, schemas, LLM adapter,
                     intent guardrail, post-processing pipeline
 src/orchestration/  daily waterfall + weekly Tree-of-Thought beam search
-src/memory/         the Week-3 retrieval layer (LlamaIndex + Chroma)
+src/memory/         feedback retrieval layer (LlamaIndex + Chroma)
 src/tools/          one polite wrapper + the seven API tools, calendar
                     read/write, travel matrix
 src/safety/         validators, self-report scan, redaction, trajectory log
